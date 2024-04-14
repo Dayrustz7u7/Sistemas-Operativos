@@ -1,4 +1,7 @@
 #include "exec.h"
+#include "types.h"
+#include <stdio.h>
+#include <unistd.h>
 
 // sets "key" with the key part of "arg"
 // and null-terminates it
@@ -49,6 +52,9 @@ static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
+	for (int i = 0; i < eargc; i++) {
+		
+	}
 }
 
 // opens the file in which the stdin/stdout/stderr
@@ -86,10 +92,11 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		// spawns a command
-		//
-		// Your code here
-		printf("Commands are not yet implemented\n");
+		e = (struct execcmd*) cmd; 
+		set_environ_vars(e->eargv, e->eargc); 
+		if (execvp(e->eargv[0],e->eargv) < 0 ) {
+			perror("execvp error");
+		}
 		_exit(-1);
 		break;
 
