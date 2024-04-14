@@ -1,4 +1,10 @@
 #include "exec.h"
+#include "types.h"
+#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 // establece "clave" con la parte clave de "arg"
 // y nulo termina
@@ -49,6 +55,43 @@ static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
+	int status = 0; 
+	char *key = NULL;
+	char *value = NULL; 
+
+	for (int i = 0; i < eargc; i++) {
+
+		char *key = NULL; 
+		char *value = NULL; 
+		int idx = block_contains(eargv[i], '=');
+
+		if (idx < 0) {
+			status = -1;
+			break; 
+		}
+
+		//TO-DO: Agregar evaluacion del funcionamiento de los mallocs
+
+		key = malloc(idx + 1); 
+		if (!key) {
+			status = -1; 
+			break;
+		}
+		value = malloc(strlen(eargv[i]) - idx); 
+		if (!value) {
+			status = -1; 
+			free(key); 
+			break;
+		}
+		get_environ_key(eargv[i], key); 
+		get_environ_value(eargv[i], value, idx); 
+		free(key);
+		free(value); 
+	}
+
+	if (status < 0) {
+		perror("error ocurred"); 
+	}
 }
 
 // abre el archivo en el que el stdin/stdout/stderr
@@ -86,9 +129,9 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		// genera un comando
-        //
-        // Tu código aquí
+		// spawns a command
+		//
+		// Your code here
 		printf("Commands are not yet implemented\n");
 		_exit(-1);
 		break;
@@ -126,6 +169,7 @@ exec_cmd(struct cmd *cmd)
 		free_command(parsed_pipe);
 
 		break;
+	}
 	}
 	}
 }
