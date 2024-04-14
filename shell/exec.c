@@ -70,7 +70,7 @@ set_environ_vars(char **eargv, int eargc)
 			break; 
 		}
 
-		// Agregar evaluacion del funcionamiento de los mallocs
+		//TO-DO: Agregar evaluacion del funcionamiento de los mallocs
 
 		key = malloc(idx + 1); 
 		value = malloc(strlen(eargv[i]) - idx); 
