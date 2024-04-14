@@ -73,7 +73,16 @@ set_environ_vars(char **eargv, int eargc)
 		//TO-DO: Agregar evaluacion del funcionamiento de los mallocs
 
 		key = malloc(idx + 1); 
+		if (!key) {
+			status = -1; 
+			break;
+		}
 		value = malloc(strlen(eargv[i]) - idx); 
+		if (!value) {
+			status = -1; 
+			free(key); 
+			break;
+		}
 		get_environ_key(eargv[i], key); 
 		get_environ_value(eargv[i], value, idx); 
 		free(key);
