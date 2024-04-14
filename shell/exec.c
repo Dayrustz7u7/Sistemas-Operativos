@@ -1,6 +1,9 @@
 #include "exec.h"
 #include "types.h"
+#include "utils.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 // sets "key" with the key part of "arg"
@@ -52,8 +55,33 @@ static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
+	int status = 0; 
+	char *key = NULL;
+	char *value = NULL; 
+
 	for (int i = 0; i < eargc; i++) {
-		
+
+		char *key = NULL; 
+		char *value = NULL; 
+		int idx = block_contains(eargv[i], '=');
+
+		if (idx < 0) {
+			status = -1;
+			break; 
+		}
+
+		// Agregar evaluacion del funcionamiento de los mallocs
+
+		key = malloc(idx + 1); 
+		value = malloc(strlen(eargv[i]) - idx); 
+		get_environ_key(eargv[i], key); 
+		get_environ_value(eargv[i], value, idx); 
+		free(key);
+		free(value); 
+	}
+
+	if (status < 0) {
+		perror("error ocurred"); 
 	}
 }
 
@@ -96,7 +124,7 @@ exec_cmd(struct cmd *cmd)
 		set_environ_vars(e->eargv, e->eargc); 
 		if (execvp(e->eargv[0],e->eargv) < 0 ) {
 			perror("execvp error");
-		}
+		
 		_exit(-1);
 		break;
 
@@ -133,6 +161,7 @@ exec_cmd(struct cmd *cmd)
 		free_command(parsed_pipe);
 
 		break;
+	}
 	}
 	}
 }
