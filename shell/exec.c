@@ -132,7 +132,7 @@ exec_cmd(struct cmd *cmd)
 	case EXEC:
 		e = (struct excecmd*) cmd; 
 		set_environ_vars(e->eargv,e->eargc);
-		if(execvp(e->eargv[0],e->eargv) < 0){
+		if(execvp(e->argv[0],e->argv) < 0){
 			perror(ERROR_EXECV);
 		}
 		printf("Commands are not yet implemented\n");
