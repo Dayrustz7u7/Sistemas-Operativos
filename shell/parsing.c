@@ -19,7 +19,7 @@ get_token(char *buf, int idx)
 	return tok;
 }
 
-// parses and changes stdin/out/err if needed
+// analiza y cambia stdin/out/err si es necesario
 static bool
 parse_redir_flow(struct execcmd *c, char *arg)
 {
@@ -179,8 +179,8 @@ parse_cmd(char *buf_cmd)
 	return parse_exec(buf_cmd);
 }
 
-// parses the command line
-// looking for the pipe character '|'
+// analiza la línea de comando
+// Buscando el carácter de la tubería '|'
 struct cmd *
 parse_line(char *buf)
 {

@@ -6,6 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#define ERROR_EXECV "FALLO EL LLAMADO DE EXCEV"
+#define ERROR_MALLOC_K "FALLO AL RESERVAR MEMORIA PARA CLAVE"
+#define ERROR_MALLOC_V "FALLO AL RESERVAR MEMORIA PARA VALOR"
 // establece "clave" con la parte clave de "arg"
 // y nulo termina
 //
@@ -75,22 +78,20 @@ set_environ_vars(char **eargv, int eargc)
 		key = malloc(idx + 1); 
 		if (!key) {
 			status = -1; 
+			perror(ERROR_MALLOC_K);
 			break;
 		}
 		value = malloc(strlen(eargv[i]) - idx); 
 		if (!value) {
 			status = -1; 
 			free(key); 
+			perror(ERROR_MALLOC_V);
 			break;
 		}
 		get_environ_key(eargv[i], key); 
 		get_environ_value(eargv[i], value, idx); 
 		free(key);
 		free(value); 
-	}
-
-	if (status < 0) {
-		perror("error ocurred"); 
 	}
 }
 
@@ -129,9 +130,11 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		// spawns a command
-		//
-		// Your code here
+		e = (struct excecmd*) cmd; 
+		set_environ_vars(e->eargv,e->eargc);
+		if(execvp(e->eargv[0],e->eargv) < 0){
+			perror(ERROR_EXECV);
+		}
 		printf("Commands are not yet implemented\n");
 		_exit(-1);
 		break;
@@ -169,7 +172,6 @@ exec_cmd(struct cmd *cmd)
 		free_command(parsed_pipe);
 
 		break;
-	}
 	}
 	}
 }
