@@ -1,15 +1,14 @@
 #include "builtin.h"
 
-// returns true if the 'exit' call
-// should be performed
+#define SALIDA_SHELL "exit"
+// Devuelve verdadero si la llamada 'Salir'
+// debería de ser realizado
 //
-// (It must not be called from here)
+// (no debe llamarse desde aquí)
 int
 exit_shell(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	return strcmp(cmd,SALIDA_SHELL) == 0 ? 1 : 0 ;
 }
 
 // returns true if "chdir" was performed

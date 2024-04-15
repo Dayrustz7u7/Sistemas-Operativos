@@ -130,7 +130,7 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		e = (struct excecmd*) cmd; 
+		e = (struct excecmd*) cmd; //
 		set_environ_vars(e->eargv,e->eargc);
 		if(execvp(e->argv[0],e->argv) < 0){
 			perror(ERROR_EXECV);
