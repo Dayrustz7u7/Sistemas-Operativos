@@ -16,7 +16,7 @@ run_cmd(char *cmd)
 		return 0;
 
 	// "history" built-in call
-	if (history(cmd)) //----------------> Esto si quiern implementar el desafio
+	if (history(cmd))  //----------------> Esto si quiern implementar el desafio
 		return 0;
 
 	// "cd" built-in call
@@ -37,27 +37,27 @@ run_cmd(char *cmd)
 	// forks and run the command
 	if ((p = fork()) == 0) {
 		// Mantenga una referencia
-        // A la tubería analizada CMD
-        // para que se pueda liberar más tarde
+		// A la tubería analizada CMD
+		// para que se pueda liberar más tarde
 		if (parsed->type == PIPE)
 			parsed_pipe = parsed;
 
 		exec_cmd(parsed);
 	}
 
-	//almacenaElPidDelProceso
+	// almacenaElPidDelProceso
 	parsed->pid = p;
 
 	// Proceso de fondo Tratamiento especial
 	// Pista:
 	// - Compruebe si el proceso es
-    // se ejecutará en el 'regreso'
-    // - Imprimir información al respecto con
-    // 'print_back_info ()'
-     //
-     // Tu código aquí
+	// se ejecutará en el 'regreso'
+	// - Imprimir información al respecto con
+	// 'print_back_info ()'
+	//
+	// Tu código aquí
 
-    // espera a que termine el proceso
+	// espera a que termine el proceso
 	waitpid(p, &status, 0);
 
 	print_status_info(parsed);

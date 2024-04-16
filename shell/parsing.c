@@ -66,16 +66,16 @@ static bool
 parse_environ_var(struct execcmd *c, char *arg)
 {
 	// establece variables de entorno aparte de
-    // los definidos en la variable global "Environ"
+	// los definidos en la variable global "Environ"
 	if (block_contains(arg, '=') > 0) {
 		// verifica si la parte clave del par
-        // no contiene un char '-' que significa
-        // que no es un ambiente var, sino también
-        // Un argumento del programa a ejecutar
-        // (Por ejemplo:
-        // ./prog -arg = valor
-        // ./prog --arg = valor
-//)
+		// no contiene un char '-' que significa
+		// que no es un ambiente var, sino también
+		// Un argumento del programa a ejecutar
+		// (Por ejemplo:
+		// ./prog -arg = valor
+		// ./prog --arg = valor
+		//)
 		if (block_contains(arg, '-') < 0) {
 			c->eargv[c->eargc++] = arg;
 			return true;
@@ -171,8 +171,8 @@ parse_cmd(char *buf_cmd)
 	int idx;
 
 	// verifica si el símbolo de fondo es después
-    // un símbolo de redir, en cuyo caso
-    // No tiene que correr en el'back'
+	// un símbolo de redir, en cuyo caso
+	// No tiene que correr en el'back'
 	if ((idx = block_contains(buf_cmd, '&')) >= 0 && buf_cmd[idx - 1] != '>')
 		return parse_back(buf_cmd);
 

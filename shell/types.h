@@ -38,10 +38,10 @@ struct cmd {
  * R        epresentación de los Vars Environ
  * - * _file: cadena que contiene el nombre del archivo a redirigir a
  *
-*  IMPORTANTE
+ *  IMPORTANTE
  * ---------
- * Una estructura execcmd puede tener un tipo exec o redir dependiendo de si el comando
- * Ser ejecutado tiene al menos un símbolo de redirección (<,>, >>,> &)
+ * Una estructura execcmd puede tener un tipo exec o redir dependiendo de si el
+ * comando Ser ejecutado tiene al menos un símbolo de redirección (<,>, >>,> &)
  */
 struct execcmd {
 	int type;
