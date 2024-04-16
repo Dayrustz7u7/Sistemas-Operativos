@@ -15,6 +15,12 @@ Se llega al punto de ejecucion de la siguiente manera:
 
 1. Init Shell, que te deberia dejar parado en el directorio home (/)
 2. Run cmd que decide que toca ejecutarse, en este caso llega hasta exec_cmd()
+
+
+2.2 Dentro de runCmd al momento de hacer el parseline, creara 2 cmd tanto el izquierdo y el derecho, para finalizar creando un structura pipe y conectando estos dos cmd y devolviendo un solo cmd
+eargv y eargc se completa en -> parse_environ_var
+OJO -> ESTO SOLO SI SE PASAN MAS DE 2 COMANDOS
+
 3. exec_cmd que recibe un cmd que tiene este struct 
 ```c 
     struct cmd {

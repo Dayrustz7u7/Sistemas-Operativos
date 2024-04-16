@@ -1,8 +1,8 @@
 #include "utils.h"
 #include <stdarg.h>
 
-// splits a string line in two
-// according to the splitter character
+// divide una línea de cadena en dos
+// Según el personaje divisor
 char *
 split_line(char *buf, char splitter)
 {

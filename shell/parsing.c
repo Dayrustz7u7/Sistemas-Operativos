@@ -19,7 +19,7 @@ get_token(char *buf, int idx)
 	return tok;
 }
 
-// parses and changes stdin/out/err if needed
+// analiza y cambia stdin/out/err si es necesario
 static bool
 parse_redir_flow(struct execcmd *c, char *arg)
 {
@@ -65,17 +65,17 @@ parse_redir_flow(struct execcmd *c, char *arg)
 static bool
 parse_environ_var(struct execcmd *c, char *arg)
 {
-	// sets environment variables apart from the
-	// ones defined in the global variable "environ"
+	// establece variables de entorno aparte de
+    // los definidos en la variable global "Environ"
 	if (block_contains(arg, '=') > 0) {
-		// checks if the KEY part of the pair
-		// does not contain a '-' char which means
-		// that it is not a environ var, but also
-		// an argument of the program to be executed
-		// (For example:
-		// 	./prog -arg=value
-		// 	./prog --arg=value
-		// )
+		// verifica si la parte clave del par
+        // no contiene un char '-' que significa
+        // que no es un ambiente var, sino también
+        // Un argumento del programa a ejecutar
+        // (Por ejemplo:
+        // ./prog -arg = valor
+        // ./prog --arg = valor
+//)
 		if (block_contains(arg, '-') < 0) {
 			c->eargv[c->eargc++] = arg;
 			return true;
@@ -85,19 +85,19 @@ parse_environ_var(struct execcmd *c, char *arg)
 	return false;
 }
 
-// this function will be called for every token, and it should
-// expand environment variables. In other words, if the token
-// happens to start with '$', the correct substitution with the
-// environment value should be performed. Otherwise the same
-// token is returned. If the variable does not exist, an empty string should be
-// returned within the token
+// Esta función será llamada para cada token, y debería
+// expandir variables de entorno.En otras palabras, si el token
+// comienza con '$', la sustitución correcta con el
+// El valor del entorno debe realizarse.De lo contrario lo mismo
+// se devuelve el token.Si la variable no existe, una cadena vacía debe ser
+// regresó dentro del token
 //
-// Hints:
-// - check if the first byte of the argument contains the '$'
-// - expand it and copy the value in 'arg'
-// - remember to check the size of variable's value
-//		It could be greater than the current size of 'arg'
-//		If that's the case, you should realloc 'arg' to the new size.
+// Sugerencias:
+// - Verifique si el primer byte del argumento contiene el '$'
+// - Expanda y copie el valor en 'Arg'
+// - Recuerde verificar el tamaño del valor de la variable
+// podría ser mayor que el tamaño actual de 'arg'
+// Si ese es el caso, debe reasignar 'arg' al nuevo tamaño.
 static char *
 expand_environ_var(char *arg)
 {
@@ -106,10 +106,10 @@ expand_environ_var(char *arg)
 	return arg;
 }
 
-// parses one single command having into account:
-// - the arguments passed to the program
-// - stdin/stdout/stderr flow changes
-// - environment variables (expand and set)
+// analiza un solo comando que tiene en cuenta:
+// - Los argumentos pasados al programa
+// - STDIN/STDOUT/STDERR FLOW CAMBIOS
+// - Variables de entorno (expandir y establecer)
 static struct cmd *
 parse_exec(char *buf_cmd)
 {
@@ -143,7 +143,7 @@ parse_exec(char *buf_cmd)
 	return (struct cmd *) c;
 }
 
-// parses a command knowing that it contains the '&' char
+// analiza un comando sabiendo que contiene el '&' char
 static struct cmd *
 parse_back(char *buf_cmd)
 {
@@ -160,7 +160,7 @@ parse_back(char *buf_cmd)
 	return back_cmd_create(e);
 }
 
-// parses a command and checks if it contains the '&'
+// analiza un comando y verifica si contiene el '&'
 // (background process) character
 static struct cmd *
 parse_cmd(char *buf_cmd)
@@ -170,17 +170,17 @@ parse_cmd(char *buf_cmd)
 
 	int idx;
 
-	// checks if the background symbol is after
-	// a redir symbol, in which case
-	// it does not have to run in in the 'back'
+	// verifica si el símbolo de fondo es después
+    // un símbolo de redir, en cuyo caso
+    // No tiene que correr en el'back'
 	if ((idx = block_contains(buf_cmd, '&')) >= 0 && buf_cmd[idx - 1] != '>')
 		return parse_back(buf_cmd);
 
 	return parse_exec(buf_cmd);
 }
 
-// parses the command line
-// looking for the pipe character '|'
+// analiza la línea de comando
+// Buscando el carácter de la tubería '|'
 struct cmd *
 parse_line(char *buf)
 {
