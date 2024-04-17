@@ -43,8 +43,8 @@ cd(char *cmd)
 	if (strlen(dir) == 0) {
 		char *home = getenv(HOME);
 		if (chdir(home) < 0) {
-			perror("error"); 
-			return 0; 
+			perror("error");
+			return 0;
 		} else {
 			snprintf(prompt, sizeof(prompt), "(%s)", home);
 			return 1;
