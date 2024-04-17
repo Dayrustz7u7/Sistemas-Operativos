@@ -1,4 +1,5 @@
 #include "builtin.h"
+#include <unistd.h>
 
 #define SALIDA_SHELL "exit"
 // Devuelve verdadero si la llamada 'Salir'
@@ -27,8 +28,7 @@ int
 cd(char *cmd)
 {
 	// Your code here
-
-	return 0;
+	return chdir(cmd); 
 }
 
 // returns true if 'pwd' was invoked

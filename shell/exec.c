@@ -1,4 +1,5 @@
 #include "exec.h"
+#include "defs.h"
 #include "types.h"
 #include "utils.h"
 #include <stdio.h>
@@ -63,8 +64,6 @@ set_environ_vars(char **eargv, int eargc)
 	char *value = NULL;
 
 	for (int i = 0; i < eargc; i++) {
-		char *key = NULL;
-		char *value = NULL;
 		int idx = block_contains(eargv[i], '=');
 
 		if (idx < 0) {
@@ -87,12 +86,11 @@ set_environ_vars(char **eargv, int eargc)
 		}
 		get_environ_key(eargv[i], key);
 		get_environ_value(eargv[i], value, idx);
+
+		setenv(key, value, 0);
+
 		free(key);
 		free(value);
-	}
-
-	if (status < 0) {
-		perror("error ocurred");
 	}
 }
 
@@ -131,7 +129,6 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-
 		e = (struct execcmd *) cmd;  //
 		set_environ_vars(e->eargv, e->eargc);
 		if (execvp(e->argv[0], e->argv) < 0) {
@@ -145,7 +142,8 @@ exec_cmd(struct cmd *cmd)
 		// ejecuta un comando en segundo plano
 		//
 		// Your code here
-		printf("Background process are not yet implemented\n");
+		b = (struct backcmd *) cmd; 
+		exec_cmd(b->c); 
 		_exit(-1);
 		break;
 	}
