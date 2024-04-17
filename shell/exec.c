@@ -60,16 +60,17 @@ set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
 	int status = 0;
-	char *key = NULL;
-	char *value = NULL;
-
 	for (int i = 0; i < eargc; i++) {
+		char *key = NULL;
+		char *value = NULL;
 		int idx = block_contains(eargv[i], '=');
 
 		if (idx < 0) {
 			status = -1;
 			break;
 		}
+
+		// TO-DO: Agregar evaluacion del funcionamiento de los mallocs
 
 		key = malloc(idx + 1);
 		if (!key) {
@@ -129,7 +130,7 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		e = (struct execcmd *) cmd;  //
+		e = (struct excecmd *) cmd;  //
 		set_environ_vars(e->eargv, e->eargc);
 		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
