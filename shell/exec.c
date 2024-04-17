@@ -130,7 +130,7 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		e = (struct excecmd *) cmd;  //
+		e = (struct execcmd *) cmd;  //
 		set_environ_vars(e->eargv, e->eargc);
 		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
@@ -143,8 +143,8 @@ exec_cmd(struct cmd *cmd)
 		// ejecuta un comando en segundo plano
 		//
 		// Your code here
-		b = (struct backcmd *) cmd; 
-		exec_cmd(b->c); 
+		b = (struct backcmd *) cmd;
+		exec_cmd(b->c);
 		_exit(-1);
 		break;
 	}
