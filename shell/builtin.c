@@ -68,7 +68,7 @@ cd(char *cmd)
 int
 pwd(char *cmd)
 {
-	if (strcmp(cmd, PWD) == 0) {
+	if (strcmp(cmd, PWD) != 0) {
 		return 0;
 	}
 
