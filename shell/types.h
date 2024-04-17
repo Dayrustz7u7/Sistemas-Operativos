@@ -9,9 +9,9 @@
  * cmd
  * ---
  *
- *  Generic interface that represents a single command.
- *  All the other *cmd structs can be casted to it,
- *  and they don´t lose information (for example the 'type' field).
+ *Interfaz genérica que representa un solo comando.
+ * Todas las otras estructuras * CMD se pueden lanzar,
+ * Y no pierden información (por ejemplo, el campo 'Tipo').
  *
  *  - type: { EXEC, REDIR, BACK, PIPE }
  *  - pid: the process id
@@ -27,21 +27,21 @@ struct cmd {
  * execcmd
  * -------
  *
- * It contains all the relevant information to execute a command.
+ * Contiene toda la información relevante para ejecutar un comando.
  *
- *  - type: could be EXEC or REDIR
- *  - argc: arguments quantity after parsed
- *  - argv: array of strings representig the arguments
- *          of the form: { "binary/command", "arg0", "arg1", ... , (char*) NULL }
- *  - eargc: environ vars quantity after parsed
- *  - eargv: array of strings of the form: "KEY=VALUE"
- *          representing the environ vars
- *  - *_file: string that contains the name of the file to be redirected to
+ * - Tipo: podría ser ejecutivo o redir
+ * - argc: cantidad de argumentos después de analizar
+ * - argv: matriz de cuerdas representan los argumentos
+ * de la forma: {"binario/comando", "arg0", "arg1", ..., (char*) null}
+ * - EARGC: la cantidad Vars ambiental después de analizar
+ * - EARGV: matriz de cadenas de la forma: "clave = valor"
+ * R        epresentación de los Vars Environ
+ * - * _file: cadena que contiene el nombre del archivo a redirigir a
  *
- *  IMPORTANT
- *  ---------
- *      An execcmd struct can have EXEC or REDIR type depending on if the command
- *      to be executed has at least one redirection symbol (<, >, >>, >&)
+ *  IMPORTANTE
+ * ---------
+ * Una estructura execcmd puede tener un tipo exec o redir dependiendo de si el
+ * comando Ser ejecutado tiene al menos un símbolo de redirección (<,>, >>,> &)
  */
 struct execcmd {
 	int type;

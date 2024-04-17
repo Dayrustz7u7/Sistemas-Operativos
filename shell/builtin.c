@@ -1,15 +1,23 @@
 #include "builtin.h"
+#include "defs.h"
+#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-// returns true if the 'exit' call
-// should be performed
+
+#define SALIDA_SHELL "exit"
+#define HOME "HOME"
+#define PWD "pwd"
+// Devuelve verdadero si la llamada 'Salir'
+// debería de ser realizado
 //
-// (It must not be called from here)
+// (no debe llamarse desde aquí)
 int
 exit_shell(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	return strcmp(cmd, SALIDA_SHELL) == 0 ? 1 : 0;
 }
 
 // returns true if "chdir" was performed
@@ -27,7 +35,27 @@ exit_shell(char *cmd)
 int
 cd(char *cmd)
 {
-	// Your code here
+	if (cmd[0] != 'c' && cmd[1] != 'd') {
+		return 0;
+	}
+
+	char *dir = split_line(cmd, ' ');
+	if (strlen(dir) == 0) {
+		char *home = getenv(HOME);
+		if (chdir(home) < 0) {
+			perror("error");
+			return 0;
+		} else {
+			snprintf(prompt, sizeof(prompt), "(%s)", home);
+			return 1;
+		}
+	}
+
+	int result = chdir(dir);
+	if (result != -1) {
+		snprintf(prompt, sizeof(prompt), "(%s)", dir);
+		return 1;
+	}
 
 	return 0;
 }
@@ -40,9 +68,18 @@ cd(char *cmd)
 int
 pwd(char *cmd)
 {
-	// Your code here
+	if (strcmp(cmd, PWD) != 0) {
+		return 0;
+	}
 
-	return 0;
+	char buf[BUFLEN];
+	char *pwd = getcwd(buf, BUFLEN);
+	if (!pwd) {
+		perror("error");
+		return 0;
+	}
+	printf("%s\n", pwd);
+	return 1;
 }
 
 // returns true if `history` was invoked

@@ -1,9 +1,19 @@
 #include "exec.h"
+#include "defs.h"
+#include "types.h"
+#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-// sets "key" with the key part of "arg"
-// and null-terminates it
+#define ERROR_EXECV "FALLO EL LLAMADO DE EXCEV"
+#define ERROR_MALLOC_K "FALLO AL RESERVAR MEMORIA PARA CLAVE"
+#define ERROR_MALLOC_V "FALLO AL RESERVAR MEMORIA PARA VALOR"
+// establece "clave" con la parte clave de "arg"
+// y nulo termina
 //
-// Example:
+// Ejemplo:
 //  - KEY=value
 //  arg = ['K', 'E', 'Y', '=', 'v', 'a', 'l', 'u', 'e', '\0']
 //  key = "KEY"
@@ -18,10 +28,10 @@ get_environ_key(char *arg, char *key)
 	key[i] = END_STRING;
 }
 
-// sets "value" with the value part of "arg"
-// and null-terminates it
-// "idx" should be the index in "arg" where "=" char
-// resides
+// establece "valor" con la parte de valor de "arg"
+// y nulo termina
+// "IDX" debería ser el índice en "arg" donde "=" char
+// Reside
 //
 // Example:
 //  - KEY=value
@@ -38,25 +48,59 @@ get_environ_value(char *arg, char *value, int idx)
 	value[j] = END_STRING;
 }
 
-// sets the environment variables received
-// in the command line
+// establece las variables de entorno recibidas
+// en la línea de comando
 //
 // Hints:
-// - use 'block_contains()' to
-// 	get the index where the '=' is
-// - 'get_environ_*()' can be useful here
+// - usar'block_contains()' a
+// Obtener el índice donde el '=' es
+// - 'get_environ_*()' puede ser útil aquí
 static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
+	int status = 0;
+	for (int i = 0; i < eargc; i++) {
+		char *key = NULL;
+		char *value = NULL;
+		int idx = block_contains(eargv[i], '=');
+
+		if (idx < 0) {
+			status = -1;
+			break;
+		}
+
+		// TO-DO: Agregar evaluacion del funcionamiento de los mallocs
+
+		key = malloc(idx + 1);
+		if (!key) {
+			status = -1;
+			perror(ERROR_MALLOC_K);
+			break;
+		}
+		value = malloc(strlen(eargv[i]) - idx);
+		if (!value) {
+			status = -1;
+			free(key);
+			perror(ERROR_MALLOC_V);
+			break;
+		}
+		get_environ_key(eargv[i], key);
+		get_environ_value(eargv[i], value, idx);
+
+		setenv(key, value, 0);
+
+		free(key);
+		free(value);
+	}
 }
 
-// opens the file in which the stdin/stdout/stderr
-// flow will be redirected, and returns
-// the file descriptor
+// abre el archivo en el que el stdin/stdout/stderr
+// El flujo será redirigido y devuelve
+// El descriptor del archivo
 //
-// Find out what permissions it needs.
-// Does it have to be closed after the execve(2) call?
+// Descubre qué permisos necesita.
+// ¿Tiene que cerrarse después de la llamada Ejecve (2)?
 //
 // Hints:
 // - if O_CREAT is used, add S_IWUSR and S_IRUSR
@@ -69,16 +113,16 @@ open_redir_fd(char *file, int flags)
 	return -1;
 }
 
-// executes a command - does not return
+// ejecuta un comando - no regresa
 //
-// Hint:
-// - check how the 'cmd' structs are defined
-// 	in types.h
-// - casting could be a good option
+// Pista:
+// - Verifique cómo se definen las estructuras 'CMD'
+// en tipos.h
+// - El casting podría ser una buena opción
 void
 exec_cmd(struct cmd *cmd)
 {
-	// To be used in the different cases
+	// Para ser utilizado en los diferentes casos
 	struct execcmd *e;
 	struct backcmd *b;
 	struct execcmd *r;
@@ -86,18 +130,21 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		// spawns a command
-		//
-		// Your code here
+		e = (struct execcmd *) cmd;  //
+		set_environ_vars(e->eargv, e->eargc);
+		if (execvp(e->argv[0], e->argv) < 0) {
+			perror(ERROR_EXECV);
+		}
 		printf("Commands are not yet implemented\n");
 		_exit(-1);
 		break;
 
 	case BACK: {
-		// runs a command in background
+		// ejecuta un comando en segundo plano
 		//
 		// Your code here
-		printf("Background process are not yet implemented\n");
+		b = (struct backcmd *) cmd;
+		exec_cmd(b->c);
 		_exit(-1);
 		break;
 	}
@@ -105,9 +152,9 @@ exec_cmd(struct cmd *cmd)
 	case REDIR: {
 		// changes the input/output/stderr flow
 		//
-		// To check if a redirection has to be performed
-		// verify if file name's length (in the execcmd struct)
-		// is greater than zero
+		// para verificar si se debe realizar una redirección
+		// Verifique si la longitud del nombre del archivo (en la
+		// estructura CMD EXEC) es mayor que cero
 		//
 		// Your code here
 		printf("Redirections are not yet implemented\n");
@@ -116,7 +163,7 @@ exec_cmd(struct cmd *cmd)
 	}
 
 	case PIPE: {
-		// pipes two commands
+		// tuberías dos comandos
 		//
 		// Your code here
 		printf("Pipes are not yet implemented\n");
