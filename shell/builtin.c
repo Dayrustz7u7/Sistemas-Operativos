@@ -8,7 +8,7 @@
 int
 exit_shell(char *cmd)
 {
-	return strcmp(cmd,SALIDA_SHELL) == 0 ? 1 : 0 ;
+	return strcmp(cmd, SALIDA_SHELL) == 0 ? 1 : 0;
 }
 
 // returns true if "chdir" was performed

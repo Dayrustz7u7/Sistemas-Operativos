@@ -58,40 +58,42 @@ static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
-	int status = 0; 
+	int status = 0;
 	char *key = NULL;
-	char *value = NULL; 
+	char *value = NULL;
 
 	for (int i = 0; i < eargc; i++) {
-
-		char *key = NULL; 
-		char *value = NULL; 
+		char *key = NULL;
+		char *value = NULL;
 		int idx = block_contains(eargv[i], '=');
 
 		if (idx < 0) {
 			status = -1;
-			break; 
+			break;
 		}
 
-		//TO-DO: Agregar evaluacion del funcionamiento de los mallocs
+		// TO-DO: Agregar evaluacion del funcionamiento de los mallocs
 
-		key = malloc(idx + 1); 
+		key = malloc(idx + 1);
 		if (!key) {
-			status = -1; 
+			status = -1;
 			perror(ERROR_MALLOC_K);
 			break;
 		}
-		value = malloc(strlen(eargv[i]) - idx); 
+		value = malloc(strlen(eargv[i]) - idx);
 		if (!value) {
-			status = -1; 
-			free(key); 
+			status = -1;
+			free(key);
 			perror(ERROR_MALLOC_V);
 			break;
 		}
-		get_environ_key(eargv[i], key); 
-		get_environ_value(eargv[i], value, idx); 
+		get_environ_key(eargv[i], key);
+		get_environ_value(eargv[i], value, idx);
+
+		setenv(key, value, 0);
+
 		free(key);
-		free(value); 
+		free(value);
 	}
 }
 
@@ -130,9 +132,9 @@ exec_cmd(struct cmd *cmd)
 
 	switch (cmd->type) {
 	case EXEC:
-		e = (struct excecmd*) cmd; //
-		set_environ_vars(e->eargv,e->eargc);
-		if(execvp(e->argv[0],e->argv) < 0){
+		e = (struct excecmd *) cmd;  //
+		set_environ_vars(e->eargv, e->eargc);
+		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
 		}
 		printf("Commands are not yet implemented\n");
@@ -151,9 +153,9 @@ exec_cmd(struct cmd *cmd)
 	case REDIR: {
 		// changes the input/output/stderr flow
 		//
-        // para verificar si se debe realizar una redirección 
-        // Verifique si la longitud del nombre del archivo (en la estructura CMD EXEC) 
-        // es mayor que cero
+		// para verificar si se debe realizar una redirección
+		// Verifique si la longitud del nombre del archivo (en la
+		// estructura CMD EXEC) es mayor que cero
 		//
 		// Your code here
 		printf("Redirections are not yet implemented\n");

@@ -1,6 +1,6 @@
 #include "parsing.h"
 
-// parses an argument of the command stream input
+// analiza un argumento de la entrada del flujo de comando
 static char *
 get_token(char *buf, int idx)
 {
@@ -25,7 +25,7 @@ parse_redir_flow(struct execcmd *c, char *arg)
 {
 	int inIdx, outIdx;
 
-	// flow redirection for output
+	// Redirección de flujo para la salida
 	if ((outIdx = block_contains(arg, '>')) >= 0) {
 		switch (outIdx) {
 		// stdout redir
@@ -60,22 +60,22 @@ parse_redir_flow(struct execcmd *c, char *arg)
 	return false;
 }
 
-// parses and sets a pair KEY=VALUE
-// environment variable
+// analiza y establece una tecla de par = valor
+// Variable ambiental
 static bool
 parse_environ_var(struct execcmd *c, char *arg)
 {
 	// establece variables de entorno aparte de
-    // los definidos en la variable global "Environ"
+	// los definidos en la variable global "Environ"
 	if (block_contains(arg, '=') > 0) {
 		// verifica si la parte clave del par
-        // no contiene un char '-' que significa
-        // que no es un ambiente var, sino también
-        // Un argumento del programa a ejecutar
-        // (Por ejemplo:
-        // ./prog -arg = valor
-        // ./prog --arg = valor
-//)
+		// no contiene un char '-' que significa
+		// que no es un ambiente var, sino también
+		// Un argumento del programa a ejecutar
+		// (Por ejemplo:
+		// ./prog -arg = valor
+		// ./prog --arg = valor
+		//)
 		if (block_contains(arg, '-') < 0) {
 			c->eargv[c->eargc++] = arg;
 			return true;
@@ -101,7 +101,27 @@ parse_environ_var(struct execcmd *c, char *arg)
 static char *
 expand_environ_var(char *arg)
 {
-	// Your code here
+	// ejemplo -> $USER '
+	if (arg[0] == '$') {
+		char *posibleVariableDeEntorno = arg + 1;  // apunta a USER
+		// printf("%s",posibleVariableDeEntorno);
+		char *valorDeEntorno = getenv(
+		        posibleVariableDeEntorno);  // Como es User Devolvera EL VALOR
+
+		if (!valorDeEntorno) {  // SI ES NULL, se copiara "", esto por credito a su funcionamiento real
+			strcpy(arg,
+			       "");  // para controlar al salir de esta funcion y que luego no se añada al argv
+			return arg;
+		}
+
+		if (strlen(valorDeEntorno) > strlen(arg)) {  // marioRafael > $USER
+			arg = (char *) realloc(
+			        arg,
+			        strlen(valorDeEntorno) +
+			                1);  // + 1 por /0 y el casteo por el void*
+		}
+		strcpy(arg, valorDeEntorno);
+	}
 
 	return arg;
 }
@@ -133,8 +153,9 @@ parse_exec(char *buf_cmd)
 			continue;
 
 		tok = expand_environ_var(tok);
-
-		c->argv[argc++] = tok;
+		if (strcmp(tok, "")) {
+			c->argv[argc++] = tok;
+		}
 	}
 
 	c->argv[argc] = (char *) NULL;
@@ -171,8 +192,8 @@ parse_cmd(char *buf_cmd)
 	int idx;
 
 	// verifica si el símbolo de fondo es después
-    // un símbolo de redir, en cuyo caso
-    // No tiene que correr en el'back'
+	// un símbolo de redir, en cuyo caso
+	// No tiene que correr en el'back'
 	if ((idx = block_contains(buf_cmd, '&')) >= 0 && buf_cmd[idx - 1] != '>')
 		return parse_back(buf_cmd);
 
