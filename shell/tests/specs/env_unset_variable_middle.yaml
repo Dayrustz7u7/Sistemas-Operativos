@@ -1,17 +1,4 @@
-name: == Temporary files will be stored in: /tmp/tmpv6ah6_vo-shell-test ===                                                          
-                                                                                                                                
-Traceback (most recent call last):
-  File "/shell/./tests/test-shell", line 152, in <module>
-    run_single_test(shell_binary, reflector_binary, sys.argv[3])
-  File "/shell/./tests/test-shell", line 140, in run_single_test
-    run_tests(shell_binary, reflector_binary, [test_path])
-  File "/shell/./tests/test-shell", line 116, in run_tests
-    test = ShellTest(test_path, subs_map)
-  File "/shell/./tests/test-shell", line 62, in __init__
-    with open(filepath) as f:
-FileNotFoundError: [Errno 2] No such file or directory: './tests/specs/env_unset_middle_variable.yaml'
-make: *** [Makefile:25: test-env_unset_middle_variable] Error 1
-
+name: env_unset_middle_variable
 description: "unset middle variables are not substituted"
 command: |2
   {shell_binary}
