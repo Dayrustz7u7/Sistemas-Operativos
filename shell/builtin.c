@@ -52,8 +52,18 @@ cd(char *cmd)
 	}
 
 	int result = chdir(dir);
+
+	char buf[BUFLEN];
+	char *pwd = getcwd(buf, BUFLEN);
+
+	if (!pwd) {
+		return 0;
+	}
+
 	if (result != -1) {
-		snprintf(prompt, sizeof(prompt), "(%s)", dir);
+		// TO-DO: preguntar si asi esta bien o prefieren pwd como ruta
+		// de la shell char* current = basename(pwd);
+		snprintf(prompt, sizeof(prompt), "(%s)", pwd);
 		return 1;
 	}
 
