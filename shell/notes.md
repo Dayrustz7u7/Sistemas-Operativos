@@ -52,7 +52,7 @@ PRUEBAS:
  2.env_unset_variable_middle: error / no se porque no me anda esta prueba pero en local si
                               pasa
  3.env_substitution: true
- 4.env_magic_variable: false // ESTO ES PORQUE AUN FALTA LA VERIFICACION DE -> "$?"
+ 4.env_magic_variable: true
  5.env_large_variable: true
  6.env_empty_variable: true
  7.env_empty_middle_variable: error // esta es la misma prueba que el segundo y si pasa. Sera
