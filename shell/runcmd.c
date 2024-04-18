@@ -1,6 +1,7 @@
 #include "runcmd.h"
 #include "defs.h"
 #include "printstatus.h"
+#include <unistd.h>
 
 int status = 0;
 struct cmd *parsed_pipe;

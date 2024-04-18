@@ -135,7 +135,6 @@ exec_cmd(struct cmd *cmd)
 		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
 		}
-		printf("Commands are not yet implemented\n");
 		_exit(-1);
 		break;
 
