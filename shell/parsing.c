@@ -1,7 +1,8 @@
 #include "parsing.h"
 
-extern int status; //variable Global de la shell donde guardara el estado de salida del ultimo comando realizado.
-                   // 0-> exito /  1-> fracaso
+extern int status;  // variable Global de la shell donde guardara el estado de
+                    // salida del ultimo comando realizado.
+                    //  0-> exito /  1-> fracaso
 
 // analiza un argumento de la entrada del flujo de comando
 static char *
@@ -108,8 +109,10 @@ expand_environ_var(char *arg)
 	if (arg[0] == '$') {
 		char *posibleVariableDeEntorno = arg + 1;  // apunta a USER
 		// printf("%s",posibleVariableDeEntorno);
-		if (posibleVariableDeEntorno[0] == '?'){
-			sprintf(arg,"%d",status); //formatea el arg con la variable status;
+		if (posibleVariableDeEntorno[0] == '?') {
+			sprintf(arg,
+			        "%d",
+			        status);  // formatea el arg con la variable status;
 			return arg;
 		}
 
