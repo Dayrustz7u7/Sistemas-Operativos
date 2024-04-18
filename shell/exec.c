@@ -140,9 +140,7 @@ exec_cmd(struct cmd *cmd)
 		break;
 
 	case BACK: {
-		// ejecuta un comando en segundo plano
-		//
-		// Your code here
+		printf("Pase por aca");
 		b = (struct backcmd *) cmd;
 		exec_cmd(b->c);
 		_exit(-1);

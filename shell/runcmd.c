@@ -1,4 +1,6 @@
 #include "runcmd.h"
+#include "defs.h"
+#include "printstatus.h"
 
 int status = 0;
 struct cmd *parsed_pipe;
@@ -58,11 +60,14 @@ run_cmd(char *cmd)
 	// Tu código aquí
 
 	// espera a que termine el proceso
-	waitpid(p, &status, 0);
 
-	print_status_info(parsed);
-
+	if (parsed->type == BACK) {
+		waitpid(p, &status, WNOHANG);
+		print_back_info(parsed);
+	} else {
+		waitpid(p, &status, 0);
+		print_status_info(parsed);
+	}
 	free_command(parsed);
-
 	return 0;
 }
