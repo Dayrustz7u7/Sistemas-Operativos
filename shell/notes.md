@@ -57,4 +57,21 @@ PRUEBAS:
  6.env_empty_variable: true
  7.env_empty_middle_variable: error // esta es la misma prueba que el segundo y si pasa. Sera
                              porque no encuentra el archivo?
-  
+ 
+
+	/*
+	printf("linea ingresada: %s\n",r->scmd); //En scmd se guarda la linea tal cual
+	se ingreso printf("Parametros previo a redireccion: %d\n",r->argc); //En argc se
+	guarda la cantidad de parametros previo al < o > o 2>&1 printf("NI idea:
+	%d\n",r->eargc); //NI puta idea que se guarda en earg v printf("%s\n",r->argv[0]);
+	//argv es una lista con los parametros ingresados previo al < o > o 2>&1
+
+	printf("Ni idea: %s\n",r->eargv); //Ni idea que se guarda en eargv
+	printf("Nombre stdin: %s\n",r->in_file); //Guarda el nombre del archivo a el
+	cual se redirige la entrada estandar printf("Nombre stdout: %s\n",r->out_file);
+	//Guarda el nombre del archivo a el cual se redirige la salida estandar printf("Nombre
+	stderr: %s\n",r->err_file); if (r->argv[r->argc] == NULL){ printf("Con esto
+	comprobe que el buffer tenia un null al final\n");
+	}
+	*/
+

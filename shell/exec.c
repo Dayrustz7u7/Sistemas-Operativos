@@ -2,10 +2,14 @@
 #include "defs.h"
 #include "types.h"
 #include "utils.h"
+#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "parsing.h"
+#include "pipehandler.h"
 
 #define ERROR_EXECV "FALLO EL LLAMADO DE EXCEV"
 #define ERROR_MALLOC_K "FALLO AL RESERVAR MEMORIA PARA CLAVE"
@@ -106,11 +110,13 @@ set_environ_vars(char **eargv, int eargc)
 // - if O_CREAT is used, add S_IWUSR and S_IRUSR
 // 	to make it a readable normal file
 static int
-open_redir_fd(char *file, int flags)
+open_redir_fd(char *file, int flags, int O_CREATE)
 {
-	// Your code here
-
-	return -1;
+	
+	if (O_CREATE) {
+		return open(file, flags, S_IWUSR | S_IRUSR);
+	}
+	return open(file, flags);
 }
 
 // ejecuta un comando - no regresa
@@ -154,8 +160,74 @@ exec_cmd(struct cmd *cmd)
 		// estructura CMD EXEC) es mayor que cero
 		//
 		// Your code here
-		printf("Redirections are not yet implemented\n");
-		_exit(-1);
+
+		r = (struct execcmd *) cmd;
+
+		// Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
+		if (!(strlen(r->in_file) > 0) && !(strlen(r->out_file) > 0) &&
+		    !(strlen(r->err_file) > 0)) {
+			_exit(-1);
+		}
+
+
+		pid_t pid = fork();
+
+		if (pid < 0) {
+			printf("Entro al error del fork\n");
+			perror("fork");
+			_exit(-1);
+		}
+
+		int flags;
+
+		if (pid == 0) {
+			// Proceso hijo.
+			// O_CREAT es un flag que crea el archivo si no existe
+			// O_CLOEXEC es un flag que cierra el archivo al momento de hacer execvp
+
+			if (strlen(r->in_file) > 0) {
+				flags = (O_CREAT | O_CLOEXEC);
+				int fd_in = open(r->in_file, flags, false);
+
+				if (fd_in == -1) {
+					perror("open");
+				}
+				int err_in = dup2(fd_in, STDIN_FILENO);
+				if (err_in == -1) {
+					perror("dup2");
+				}
+			}
+			if (strlen(r->out_file) > 0) {
+				int fd_out = open(r->out_file,
+				                  O_CREAT | O_CLOEXEC,
+				                  true);
+				if (fd_out == -1) {
+					perror("open");
+				}
+				int err_out = dup2(fd_out, STDOUT_FILENO);
+				if (err_out == -1) {
+					perror("dup2");
+				}
+			}
+			if (strlen(r->err_file) > 0) {
+				int fd_err = open(r->err_file,
+				                  O_CREAT | O_CLOEXEC,
+				                  false);
+				if (fd_err == -1) {
+					perror("open");
+				}
+				int err_err = dup2(fd_err, STDERR_FILENO);
+				if (err_err == -1) {
+					perror("dup2");
+				}
+			}
+			execvp(r->argv[1], r->argv);
+			perror("execvp");
+
+		} else {
+			// Proceso padre.
+			wait((int *) 0);
+		}
 		break;
 	}
 
@@ -163,10 +235,10 @@ exec_cmd(struct cmd *cmd)
 		// tuberías dos comandos
 		//
 		// Your code here
-		printf("Pipes are not yet implemented\n");
+		p = (struct pipecmd *) cmd;
 
-		// free the memory allocated
-		// for the pipe tree structure
+		handle_pipe(p);
+
 		free_command(parsed_pipe);
 
 		break;
