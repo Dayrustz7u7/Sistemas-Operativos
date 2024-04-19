@@ -105,16 +105,7 @@ exec_cmd(struct cmd *cmd)
 	}
 
 	case REDIR: {
-		// changes the input/output/stderr flow
-		//
-		// To check if a redirection has to be performed
-		// verify if file name's length (in the execcmd struct)
-		// is greater than zero
-		//
-		// Your code here
-		r = (struct execcmd *) cmd;
-		
-		/*
+				/*
 		printf("linea ingresada: %s\n",r->scmd); //En scmd se guarda la linea tal cual se ingreso
 		printf("Parametros previo a redireccion: %d\n",r->argc); //En argc se guarda la cantidad de parametros previo al < o > o 2>&1
 		printf("NI idea: %d\n",r->eargc); //NI puta idea que se guarda en earg v
@@ -129,11 +120,13 @@ exec_cmd(struct cmd *cmd)
 		}
 		*/
 
+		r = (struct execcmd *) cmd;
 
 		//Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
 		if ( !(strlen(r->in_file)>0) && !(strlen(r->out_file)>0) && !(strlen(r->err_file)>0)){
 			_exit(-1);
 		}
+
 
 		pid_t pid = fork();
 
@@ -143,8 +136,11 @@ exec_cmd(struct cmd *cmd)
 			_exit(-1);
 		} else if (pid == 0){
 			//Proceso hijo.
+			//O_CREAT es un flag que crea el archivo si no existe
+			//O_CLOEXEC es un flag que cierra el archivo al momento de hacer execvp.
 			if (strlen(r->in_file)>0){
 				printf("Entro a input");
+				printf("%s\n",r->in_file);
 				int fd_in = open(r->in_file, O_CREAT | O_CLOEXEC);
 				if (fd_in == -1){
 					printf("Entro al error del archivo\n");
@@ -158,6 +154,7 @@ exec_cmd(struct cmd *cmd)
 			}
 			if (strlen(r->out_file)>0){
 				printf("Entro a output");
+				printf("%s\n",r->out_file);
 				int fd_out = open(r->out_file, O_CREAT | O_CLOEXEC);
 				if (fd_out == -1){
 					printf("Entro al error del archivo\n");
@@ -171,6 +168,7 @@ exec_cmd(struct cmd *cmd)
 			}
 			if (strlen(r->err_file)>0){
 				printf("Entro a error");
+				printf("%s\n",r->err_file);
 				int fd_err = open(r->err_file, O_CREAT | O_CLOEXEC);
 				if (fd_err == -1){
 					printf("Entro al error del archivo\n");
