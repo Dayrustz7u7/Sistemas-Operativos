@@ -164,11 +164,6 @@ exec_cmd(struct cmd *cmd)
 		r = (struct execcmd *) cmd;
 
 		// Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
-		if (!(strlen(r->in_file) > 0) && !(strlen(r->out_file) > 0) &&
-		    !(strlen(r->err_file) > 0)) {
-			_exit(-1);
-		}
-
 
 		pid_t pid = fork();
 
