@@ -105,77 +105,81 @@ exec_cmd(struct cmd *cmd)
 	}
 
 	case REDIR: {
-				/*
-		printf("linea ingresada: %s\n",r->scmd); //En scmd se guarda la linea tal cual se ingreso
-		printf("Parametros previo a redireccion: %d\n",r->argc); //En argc se guarda la cantidad de parametros previo al < o > o 2>&1
-		printf("NI idea: %d\n",r->eargc); //NI puta idea que se guarda en earg v
-		printf("%s\n",r->argv[0]); //argv es una lista con los parametros ingresados previo al < o > o 2>&1
-		
-		printf("Ni idea: %s\n",r->eargv); //Ni idea que se guarda en eargv
-		printf("Nombre stdin: %s\n",r->in_file); //Guarda el nombre del archivo a el cual se redirige la entrada estandar
-		printf("Nombre stdout: %s\n",r->out_file); //Guarda el nombre del archivo a el cual se redirige la salida estandar
-		printf("Nombre stderr: %s\n",r->err_file);
-		if (r->argv[r->argc] == NULL){
-			printf("Con esto comprobe que el buffer tenia un null al final\n");
-		}
-		*/
+		/*
+printf("linea ingresada: %s\n",r->scmd); //En scmd se guarda la linea tal cual
+se ingreso printf("Parametros previo a redireccion: %d\n",r->argc); //En argc se
+guarda la cantidad de parametros previo al < o > o 2>&1 printf("NI idea:
+%d\n",r->eargc); //NI puta idea que se guarda en earg v printf("%s\n",r->argv[0]);
+//argv es una lista con los parametros ingresados previo al < o > o 2>&1
+
+printf("Ni idea: %s\n",r->eargv); //Ni idea que se guarda en eargv
+printf("Nombre stdin: %s\n",r->in_file); //Guarda el nombre del archivo a el
+cual se redirige la entrada estandar printf("Nombre stdout: %s\n",r->out_file);
+//Guarda el nombre del archivo a el cual se redirige la salida estandar printf("Nombre
+stderr: %s\n",r->err_file); if (r->argv[r->argc] == NULL){ printf("Con esto
+comprobe que el buffer tenia un null al final\n");
+}
+*/
 
 		r = (struct execcmd *) cmd;
 
-		//Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
-		if ( !(strlen(r->in_file)>0) && !(strlen(r->out_file)>0) && !(strlen(r->err_file)>0)){
+		// Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
+		if (!(strlen(r->in_file) > 0) && !(strlen(r->out_file) > 0) &&
+		    !(strlen(r->err_file) > 0)) {
 			_exit(-1);
 		}
 
 
 		pid_t pid = fork();
 
-		if (pid < 0){
+		if (pid < 0) {
 			printf("Entro al error del fork\n");
 			perror("fork");
 			_exit(-1);
-		} else if (pid == 0){
-			//Proceso hijo.
-			//O_CREAT es un flag que crea el archivo si no existe
-			//O_CLOEXEC es un flag que cierra el archivo al momento de hacer execvp.
-			if (strlen(r->in_file)>0){
+		} else if (pid == 0) {
+			// Proceso hijo.
+			// O_CREAT es un flag que crea el archivo si no existe
+			// O_CLOEXEC es un flag que cierra el archivo al momento de hacer execvp.
+			if (strlen(r->in_file) > 0) {
 				printf("Entro a input");
-				printf("%s\n",r->in_file);
+				printf("%s\n", r->in_file);
 				int fd_in = open(r->in_file, O_CREAT | O_CLOEXEC);
-				if (fd_in == -1){
+				if (fd_in == -1) {
 					printf("Entro al error del archivo\n");
 					perror("open");
 				}
 				int err_in = dup2(fd_in, STDIN_FILENO);
-				if (err_in == -1){
+				if (err_in == -1) {
 					printf("Entro al error del dup2\n");
 					perror("dup2");
 				}
 			}
-			if (strlen(r->out_file)>0){
+			if (strlen(r->out_file) > 0) {
 				printf("Entro a output");
-				printf("%s\n",r->out_file);
-				int fd_out = open(r->out_file, O_CREAT | O_CLOEXEC);
-				if (fd_out == -1){
+				printf("%s\n", r->out_file);
+				int fd_out =
+				        open(r->out_file, O_CREAT | O_CLOEXEC);
+				if (fd_out == -1) {
 					printf("Entro al error del archivo\n");
 					perror("open");
 				}
 				int err_out = dup2(fd_out, STDOUT_FILENO);
-				if (err_out == -1){
+				if (err_out == -1) {
 					printf("Entro al error del dup2\n");
 					perror("dup2");
 				}
 			}
-			if (strlen(r->err_file)>0){
+			if (strlen(r->err_file) > 0) {
 				printf("Entro a error");
-				printf("%s\n",r->err_file);
-				int fd_err = open(r->err_file, O_CREAT | O_CLOEXEC);
-				if (fd_err == -1){
+				printf("%s\n", r->err_file);
+				int fd_err =
+				        open(r->err_file, O_CREAT | O_CLOEXEC);
+				if (fd_err == -1) {
 					printf("Entro al error del archivo\n");
 					perror("open");
 				}
 				int err_err = dup2(fd_err, STDERR_FILENO);
-				if (err_err == -1){
+				if (err_err == -1) {
 					printf("Entro al error del dup2\n");
 					perror("dup2");
 				}
@@ -183,8 +187,8 @@ exec_cmd(struct cmd *cmd)
 			execvp(r->argv[1], r->argv);
 			perror("execvp");
 
-		} else{
-			//Proceso padre.
+		} else {
+			// Proceso padre.
 			wait((int *) 0);
 		}
 		break;
@@ -196,7 +200,7 @@ exec_cmd(struct cmd *cmd)
 		// Your code here
 		p = (struct pipecmd *) cmd;
 
-	    handle_pipe(p);
+		handle_pipe(p);
 
 		free_command(parsed_pipe);
 
