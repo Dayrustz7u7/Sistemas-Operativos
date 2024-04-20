@@ -8,7 +8,6 @@
 bool has_other_pipe(const char* buf){
     //Se fija si tiene otro pipe mas dentro de la linea de comandos ingresados.
     for (int i=0; i<strlen(buf); i++){
-        printf("%c\n",buf[i]);
         if (buf[i]=='|'){
             return true;
         }

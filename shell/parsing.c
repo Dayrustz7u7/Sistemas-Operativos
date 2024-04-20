@@ -1,4 +1,5 @@
 #include "parsing.h"
+#include "utils.h"
 
 extern int status;  // variable Global de la shell donde guardara el estado de
                     // salida del ultimo comando realizado.
@@ -220,8 +221,13 @@ parse_line(char *buf)
 
 	char *right = split_line(buf, '|');
 
-	l = parse_cmd(buf);
-	r = parse_cmd(right);
+	if (block_contains(right, '|') == 0){
+		r =	parse_line(right); 
+	} else {
+		r = parse_cmd(right); 
+	}
+
+	l = parse_cmd(buf); 
 
 	return pipe_cmd_create(l, r);
 }
