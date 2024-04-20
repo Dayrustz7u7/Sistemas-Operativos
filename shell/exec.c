@@ -117,7 +117,7 @@ open_redir_fd(char *file, int flags)
 	if (flags & O_CREAT) {
 		fd = open(file, flags, S_IRUSR | S_IWUSR);
 	} else {
-		fd = open(file, flags, 0644);
+		fd = open(file, flags);
 	}
 
 	if (fd < 0) {
@@ -181,21 +181,19 @@ exec_cmd(struct cmd *cmd)
 		// Verifique si la longitud del nombre del archivo (en la
 		// estructura CMD EXEC) es mayor que cero
 		//
-		// Your code here
-
 		r = (struct execcmd *) cmd;
 
 		if (strlen(r->in_file) > 0) {
 			int fd_in =
 			        open_redir_fd(r->in_file, O_CLOEXEC | O_RDONLY);
 			dup2(fd_in, STDIN_FILENO);
-		}
+		} 
 		if (strlen(r->out_file) > 0) {
 			int fd_out = open_redir_fd(r->out_file,
 			                           O_CREAT | O_CLOEXEC |
 			                                   O_WRONLY | O_TRUNC);
-			dup2(fd_out, STDERR_FILENO);
-		}
+			dup2(fd_out, STDOUT_FILENO);
+		} 
 		if (strlen(r->err_file) > 0) {
 			if (strcmp(r->err_file, "&1") == 0) {
 				dup2(STDOUT_FILENO, STDERR_FILENO);
