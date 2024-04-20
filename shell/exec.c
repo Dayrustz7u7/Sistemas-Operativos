@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "types.h"
 #include "utils.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -110,15 +111,37 @@ set_environ_vars(char **eargv, int eargc)
 // - if O_CREAT is used, add S_IWUSR and S_IRUSR
 // 	to make it a readable normal file
 static int
-open_redir_fd(char *file, int flags, int O_CREATE)
+open_redir_fd(char *file, int flags)
 {
-	
-	if (O_CREATE) {
-		return open(file, flags, S_IWUSR | S_IRUSR);
+	int fd;
+	if (flags & O_CREAT) {
+		fd = open(file, flags, S_IRUSR | S_IWUSR);
+	} else {
+		fd = open(file, flags, 0644);
 	}
-	return open(file, flags);
+
+	if (fd < 0) {
+		_exit(-1);
+	}
+
+	return fd;
 }
 
+
+void
+aux_dup(int fd, int out)
+{
+	if (fd < 0) {
+		perror("fd error");
+		_exit(-1);
+	}
+
+	if (dup2(fd, out) < 0) {
+		perror("dup2 error");
+		_exit(-1);
+	}
+	return;
+}
 // ejecuta un comando - no regresa
 //
 // Pista:
@@ -145,7 +168,6 @@ exec_cmd(struct cmd *cmd)
 		break;
 
 	case BACK: {
-		printf("Pase por aca");
 		b = (struct backcmd *) cmd;
 		exec_cmd(b->c);
 		_exit(-1);
@@ -163,78 +185,41 @@ exec_cmd(struct cmd *cmd)
 
 		r = (struct execcmd *) cmd;
 
-		// Nos aseguramos que el nombre del archivo con el que se va a trabajar sea mayor que 0.
-
-		pid_t pid = fork();
-
-		if (pid < 0) {
-			printf("Entro al error del fork\n");
-			perror("fork");
-			_exit(-1);
+		if (strlen(r->in_file) > 0) {
+			int fd_in =
+			        open_redir_fd(r->in_file, O_CLOEXEC | O_RDONLY);
+			dup2(fd_in, STDIN_FILENO);
 		}
-
-		int flags;
-
-		if (pid == 0) {
-			// Proceso hijo.
-			// O_CREAT es un flag que crea el archivo si no existe
-			// O_CLOEXEC es un flag que cierra el archivo al momento de hacer execvp
-
-			if (strlen(r->in_file) > 0) {
-				flags = (O_CREAT | O_CLOEXEC);
-				int fd_in = open(r->in_file, flags, false);
-
-				if (fd_in == -1) {
-					perror("open");
-				}
-				int err_in = dup2(fd_in, STDIN_FILENO);
-				if (err_in == -1) {
-					perror("dup2");
-				}
-			}
-			if (strlen(r->out_file) > 0) {
-				int fd_out = open(r->out_file,
-				                  O_CREAT | O_CLOEXEC,
-				                  true);
-				if (fd_out == -1) {
-					perror("open");
-				}
-				int err_out = dup2(fd_out, STDOUT_FILENO);
-				if (err_out == -1) {
-					perror("dup2");
-				}
-			}
-			if (strlen(r->err_file) > 0) {
-				int fd_err = open(r->err_file,
-				                  O_CREAT | O_CLOEXEC,
-				                  false);
-				if (fd_err == -1) {
-					perror("open");
-				}
-				int err_err = dup2(fd_err, STDERR_FILENO);
-				if (err_err == -1) {
-					perror("dup2");
-				}
-			}
-			execvp(r->argv[1], r->argv);
-			perror("execvp");
-
-		} else {
-			// Proceso padre.
-			wait((int *) 0);
+		if (strlen(r->out_file) > 0) {
+			int fd_out = open_redir_fd(r->out_file,
+			                           O_CREAT | O_CLOEXEC |
+			                                   O_WRONLY | O_TRUNC);
+			dup2(fd_out, STDERR_FILENO);
 		}
+		if (strlen(r->err_file) > 0) {
+			if (strcmp(r->err_file, "&1") == 0) {
+				dup2(STDOUT_FILENO, STDERR_FILENO);
+			} else {
+				int fd_err = open_redir_fd(r->err_file,
+				                           O_TRUNC | O_WRONLY |
+				                                   O_CREAT |
+				                                   O_CLOEXEC);
+				dup2(fd_err, STDERR_FILENO);
+			}
+		}
+		r->type = EXEC;
+		exec_cmd((struct cmd *) r);
 		break;
 	}
-
 	case PIPE: {
 		// tuberías dos comandos
 		//
 		// Your code here
 		p = (struct pipecmd *) cmd;
 
-		handle_pipe(p);
+		// handle_pipe(p);
 
-		free_command(parsed_pipe);
+		free_command(cmd);
 
 		break;
 	}
