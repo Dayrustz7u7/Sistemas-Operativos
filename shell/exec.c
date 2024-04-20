@@ -65,14 +65,12 @@ static void
 set_environ_vars(char **eargv, int eargc)
 {
 	// Your code here
-	int status = 0;
 	for (int i = 0; i < eargc; i++) {
 		char *key = NULL;
 		char *value = NULL;
 		int idx = block_contains(eargv[i], '=');
 
 		if (idx < 0) {
-			status = -1;
 			break;
 		}
 
@@ -80,13 +78,11 @@ set_environ_vars(char **eargv, int eargc)
 
 		key = malloc(idx + 1);
 		if (!key) {
-			status = -1;
 			perror(ERROR_MALLOC_K);
 			break;
 		}
 		value = malloc(strlen(eargv[i]) - idx);
 		if (!value) {
-			status = -1;
 			free(key);
 			perror(ERROR_MALLOC_V);
 			break;
