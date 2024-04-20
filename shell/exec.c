@@ -74,8 +74,6 @@ set_environ_vars(char **eargv, int eargc)
 			break;
 		}
 
-		// TO-DO: Agregar evaluacion del funcionamiento de los mallocs
-
 		key = malloc(idx + 1);
 		if (!key) {
 			perror(ERROR_MALLOC_K);
