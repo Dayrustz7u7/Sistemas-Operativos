@@ -116,6 +116,7 @@ open_redir_fd(char *file, int flags)
 	}
 
 	if (fd < 0) {
+		perror("open error");
 		_exit(-1);
 	}
 

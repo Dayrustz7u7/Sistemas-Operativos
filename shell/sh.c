@@ -1,5 +1,4 @@
 #include "defs.h"
-#include "types.h"
 #include "readline.h"
 #include "runcmd.h"
 

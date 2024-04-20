@@ -81,7 +81,7 @@ parse_environ_var(struct execcmd *c, char *arg)
 		// ./prog -arg = valor
 		// ./prog --arg = valor
 		//)
-		if (block_contains(arg, '-') < 0) {
+		if (block_contains(arg, '-') <= 0) {
 			c->eargv[c->eargc++] = arg;
 			return true;
 		}
@@ -221,13 +221,11 @@ parse_line(char *buf)
 
 	char *right = split_line(buf, '|');
 
-	if (block_contains(right, '|') == 0) {
-		r = parse_line(right);
+	if (block_contains(right, '|') >= 0) {
+		r = parse_line(right); 
 	} else {
-		r = parse_cmd(right);
+		r = parse_cmd(right); // Deberia devolver vacio 
 	}
-
 	l = parse_cmd(buf);
-
 	return pipe_cmd_create(l, r);
 }
