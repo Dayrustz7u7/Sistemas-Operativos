@@ -11,8 +11,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#define READ 0  //File descriptor de lectura.
-#define WRITE 1 //FIle descriptor de escritura.
+#define READ 0   // File descriptor de lectura.
+#define WRITE 1  // FIle descriptor de escritura.
 #define ERROR_EXECV "FALLO EL LLAMADO DE EXCEV"
 #define ERROR_MALLOC_K "FALLO AL RESERVAR MEMORIA PARA CLAVE"
 #define ERROR_MALLOC_V "FALLO AL RESERVAR MEMORIA PARA VALOR"
@@ -128,21 +128,6 @@ open_redir_fd(char *file, int flags)
 	return fd;
 }
 
-
-void
-aux_dup(int fd, int out)
-{
-	if (fd < 0) {
-		perror("fd error");
-		_exit(-1);
-	}
-
-	if (dup2(fd, out) < 0) {
-		perror("dup2 error");
-		_exit(-1);
-	}
-	return;
-}
 // ejecuta un comando - no regresa
 //
 // Pista:
@@ -212,56 +197,56 @@ exec_cmd(struct cmd *cmd)
 	}
 	case PIPE: {
 		// pipes two commands
-		p = (struct pipecmd*)cmd; 
+		p = (struct pipecmd *) cmd;
 
-		int fd[2]; 
+		int fd[2];
 
-		if (pipe(fd) < 0){
-			perror("pipe error"); 
-			free_command(cmd); 
-			_exit(-1); 
-		}
-	
-		pid_t proceso_izq = fork(); 
-		
-		if (proceso_izq < 0) {
-			perror("fork err"); 
-			close(fd[READ]); 
-			close(fd[WRITE]); 
-			free_command(cmd); 
+		if (pipe(fd) < 0) {
+			perror("pipe error");
+			free_command(cmd);
 			_exit(-1);
 		}
 
-		if (proceso_izq == 0){
-			close(READ); 
-			dup2(fd[WRITE], STDOUT_FILENO); 
-			close(WRITE);
-			exec_cmd(p->leftcmd);  
-			_exit(-1); 
+		pid_t proceso_izq = fork();
+
+		if (proceso_izq < 0) {
+			perror("fork err");
+			close(fd[READ]);
+			close(fd[WRITE]);
+			free_command(cmd);
+			_exit(-1);
 		}
 
-		pid_t proceso_der = fork(); 
+		if (proceso_izq == 0) {
+			close(READ);
+			dup2(fd[WRITE], STDOUT_FILENO);
+			close(WRITE);
+			exec_cmd(p->leftcmd);
+			_exit(-1);
+		}
+
+		pid_t proceso_der = fork();
 
 		if (proceso_der < 0) {
-			close(fd[READ]); 
-			close(fd[WRITE]); 
-			free_command(cmd); 
-			perror("fork err"); 
-			_exit(-1); 
-		}
-		
-		if (proceso_der == 0){
-			close(fd[WRITE]); 
-			dup2(fd[READ], STDIN_FILENO); 
-			close(READ);
-			exec_cmd(p->rightcmd);  
-			_exit(-1); 
+			close(fd[READ]);
+			close(fd[WRITE]);
+			free_command(cmd);
+			perror("fork err");
+			_exit(-1);
 		}
 
-		close(fd[READ]); 
-		close(fd[WRITE]); 
-		waitpid(proceso_izq, NULL, 0); 
-		waitpid(proceso_der, NULL, 0); 
+		if (proceso_der == 0) {
+			close(fd[WRITE]);
+			dup2(fd[READ], STDIN_FILENO);
+			close(READ);
+			exec_cmd(p->rightcmd);
+			_exit(-1);
+		}
+
+		close(fd[READ]);
+		close(fd[WRITE]);
+		waitpid(proceso_izq, NULL, 0);
+		waitpid(proceso_der, NULL, 0);
 		free_command(cmd);
 		_exit(0);
 	}
