@@ -222,9 +222,9 @@ parse_line(char *buf)
 	char *right = split_line(buf, '|');
 
 	if (block_contains(right, '|') >= 0) {
-		r = parse_line(right); 
+		r = parse_line(right);
 	} else {
-		r = parse_cmd(right); // Deberia devolver vacio 
+		r = parse_cmd(right);
 	}
 	l = parse_cmd(buf);
 	return pipe_cmd_create(l, r);
