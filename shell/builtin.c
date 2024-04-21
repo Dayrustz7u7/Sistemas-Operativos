@@ -35,9 +35,9 @@ exit_shell(char *cmd)
 int
 cd(char *cmd)
 {
-    if (strncmp(cmd, "cd", 2) != 0) {
-        return 0;
-    }
+	if (strncmp(cmd, "cd", 2) != 0) {
+		return 0;
+	}
 
 	char *dir = split_line(cmd, ' ');
 	if (strlen(dir) == 0) {

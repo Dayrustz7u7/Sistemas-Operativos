@@ -214,8 +214,6 @@ parse_cmd(char *buf_cmd)
 }
 
 
-
-
 // analiza la línea de comando
 // Buscando el carácter de la tubería '|'
 struct cmd *
