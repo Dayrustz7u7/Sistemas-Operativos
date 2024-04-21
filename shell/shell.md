@@ -4,8 +4,8 @@
 
 #### ¿Cuáles son las diferencias entre la syscall execve(2) y la familia de wrappers proporcionados por la librería estándar de C (libc) exec(3)?
 
-Cómo aceptan los argumentos (Me parece rari, pero investigar un poco mas esto)
-https://stackoverflow.com/questions/20823371/what-is-the-difference-between-the-functions-of-the-exec-family-of-system-calls
+Cómo aceptan los argumentos 
+La familia de exec roporciona múltiples funciones con diferentes firmas, algunas toman una lista de argumentos separados por coma, otras toman un vector de argumentos, y algunas incluso permiten especificar variables de entorno.
 
 Cómo manejan los errores.
 En resumen, mientras que execve(2) ofrece un mayor nivel de control sobre la detección de errores, ya que el programador puede examinar directamente el valor de retorno y errno, las funciones exec(3) simplifican esto al devolver solo -1 en caso de error y establecer errno en consecuencia.
@@ -18,9 +18,7 @@ El entorno para estas funciones (funciones exec(3)) es el mismo que el del proce
 #### ¿Puede la llamada a exec(3) fallar? ¿Cómo se comporta la implementación de la shell en ese caso?
 
 Sí, la llamada a exec(3) puede fallar por varias razones, como por ejemplo si el archivo ejecutable especificado no existe, si no tiene permisos de ejecución, si el número máximo de archivos abiertos se ha alcanzado, etc.
-
 Cuando exec(3) falla, generalmente devuelve -1 y establece la variable errno para indicar el tipo de error que ocurrió.
-
 En el caso de una shell, si la llamada a exec(3) falla, la shell normalmente imprimirá un mensaje de error apropiado, como "comando no encontrado" o "permiso denegado", y luego continuará esperando la próxima entrada del usuario. Esto permite que la shell siga siendo interactiva y útil, incluso si algunos comandos no se pueden ejecutar correctamente.
 
 ---
