@@ -57,10 +57,8 @@ init_stack()
 void
 set_sig_action(stack_t *stack)
 {
-	struct sigaction sig_handler = {
-		.sa_sigaction = sigchild_handler,
-		.sa_flags = SA_RESTART
-	};
+	struct sigaction sig_handler = { .sa_sigaction = sigchild_handler,
+		                         .sa_flags = SA_RESTART };
 	if (sigaction(SIGCHLD, &sig_handler, NULL) == -1) {
 		perror("sigaction");
 		sigaltstack(NULL, NULL);
