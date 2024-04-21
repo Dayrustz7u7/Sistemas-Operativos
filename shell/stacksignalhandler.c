@@ -46,7 +46,7 @@ init_stack()
 	}
 
 	if (sigaltstack(new_stack, NULL) == -1) {
-		perror("sigaltstack");  
+		perror("sigaltstack");
 		destroy_stack(new_stack);
 		return NULL;
 	}
