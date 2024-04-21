@@ -1,5 +1,6 @@
 #include "parsing.h"
 #include "utils.h"
+#include <string.h>
 
 extern int status;  // variable Global de la shell donde guardara el estado de
                     // salida del ultimo comando realizado.
@@ -212,6 +213,9 @@ parse_cmd(char *buf_cmd)
 	return parse_exec(buf_cmd);
 }
 
+
+
+
 // analiza la línea de comando
 // Buscando el carácter de la tubería '|'
 struct cmd *
@@ -219,7 +223,7 @@ parse_line(char *buf)
 {
 	struct cmd *r, *l;
 
-	char *right = split_line(buf, '|');
+	char *right = split_line(buf, 124);
 
 	if (block_contains(right, '|') >= 0) {
 		r = parse_line(right);

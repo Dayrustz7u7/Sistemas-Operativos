@@ -166,7 +166,7 @@ exec_cmd(struct cmd *cmd)
 
 		if (strlen(r->in_file) > 0) {
 			int fd_in =
-			        open_redir_fd(r->in_file, O_CLOEXEC | O_RDONLY);
+			        open_redir_fd(r->in_file,  O_RDONLY);
 			dup2(fd_in, STDIN_FILENO);
 		}
 		if (strlen(r->out_file) > 0) {
@@ -181,8 +181,7 @@ exec_cmd(struct cmd *cmd)
 			} else {
 				int fd_err = open_redir_fd(r->err_file,
 				                           O_TRUNC | O_WRONLY |
-				                                   O_CREAT |
-				                                   O_CLOEXEC);
+				                                   O_CREAT );
 				dup2(fd_err, STDERR_FILENO);
 			}
 		}
