@@ -192,6 +192,9 @@ exec_cmd(struct cmd *cmd)
 		// pipes two commands
 		p = (struct pipecmd *) cmd;
 
+		// Todos los procesos hijos se llevan el mismo id
+		setpgid(0, 0);
+
 		int fd[2];
 
 		if (pipe(fd) < 0) {

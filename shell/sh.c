@@ -39,7 +39,6 @@ int
 main(void)
 {
 	stack_t *stack = init_stack();
-	init_shell();
 
 	if (!stack) {
 		return 0;
@@ -47,8 +46,8 @@ main(void)
 
 	set_sig_action(stack);
 
+	init_shell();
 	run_shell();
-
 	destroy_stack(stack);
 
 	return 0;

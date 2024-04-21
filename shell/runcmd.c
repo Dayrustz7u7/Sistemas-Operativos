@@ -1,17 +1,28 @@
 #include "runcmd.h"
 #include "defs.h"
 #include "printstatus.h"
+#include <sys/types.h>
 #include <unistd.h>
 
 int status = 0;
 struct cmd *parsed_pipe;
 
+void
+gpd_setter(pid_t *shell_pid)
+{
+	if (!(*shell_pid)) {
+		*shell_pid = getpid();
+	} else {
+		setpgid(0, *shell_pid);
+	}
+}
 // runs the command in 'cmd'
 int
 run_cmd(char *cmd)
 {
 	pid_t p;
 	struct cmd *parsed;
+	pid_t shell_pid = 0;
 
 	// if the "enter" key is pressed
 	// just print the prompt again
@@ -36,15 +47,19 @@ run_cmd(char *cmd)
 
 	// parses the command line
 	parsed = parse_line(cmd);
-
-	// forks and run the command
 	if ((p = fork()) == 0) {
 		// Mantenga una referencia
 		// A la tubería analizada CMD
 		// para que se pueda liberar más tarde
-		if (parsed->type == PIPE)
-			parsed_pipe = parsed;
+		if (parsed->type == BACK) {
+			gpd_setter(&shell_pid);
+		} else {
+			setpgid(0, getpid());
+		}
 
+		if (parsed->type == PIPE) {
+			parsed_pipe = parsed;
+		}
 		exec_cmd(parsed);
 	}
 
