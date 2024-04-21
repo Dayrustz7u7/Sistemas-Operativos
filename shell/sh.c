@@ -3,7 +3,6 @@
 #include "runcmd.h"
 #include <bits/types/stack_t.h>
 #include <bits/types/struct_sigstack.h>
-#include <signal.h>
 #include <stdio.h>
 #include "stacksignalhandler.h"
 
