@@ -20,5 +20,5 @@ types.h
 utils.c
 utils.h
 tests/reflector.c
-stacksignal.c
-stacksignal.h
+stacksignalhandler.c
+stacksignalhandler.h
