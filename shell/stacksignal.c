@@ -1,3 +1,4 @@
+#include <bits/types/siginfo_t.h>
 #include <bits/types/stack_t.h>
 #include <bits/types/struct_sigstack.h>
 #include <stdio.h>
@@ -5,11 +6,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "stacksignal.h"
-
+#include "utils.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-
+#include <unistd.h>
 stack_t *
 create_stack_signal()
 {
@@ -46,19 +47,14 @@ destroy_stack(stack_t *stack)
 }
 
 
-// void
-// sigint_handler(int signum)
-// {
-// 	printf("Señal SIGINT recibida. Saliendo...\n");
-// }
+void
+sigchild_handler(int sig, siginfo_t *info, void *ucontext)
+{
 
-
-// void sigchild_handler() {
-//     pid_t pid;
-//     int status;
-//     pid = waitpid(NULL, &status, NULL);
-//     printf("==> terminado: PID=%i", pid);
-// }
-
-
-// sigaction(SIGCHILD, &sa, NULL) == -1;
+	// int status; 
+	// if ((waitpid(info->si_pid, &status , WNOHANG))) {
+	// 	if (WIFEXITED(status)) {
+	// 		printf("==> PID:%i status:%i\n", info->si_pid, status); 
+	// 	}
+	// }
+}
