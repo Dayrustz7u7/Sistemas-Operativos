@@ -50,7 +50,6 @@ main(void)
 
 	run_shell();
 
-	sigaltstack(NULL, NULL);
 	destroy_stack(stack);
 
 	return 0;
