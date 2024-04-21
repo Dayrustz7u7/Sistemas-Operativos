@@ -44,11 +44,11 @@ init_stack()
 		return NULL;
 	}
 
-	// if (sigaltstack(NULL, new_stack) == -1) {
-	// 	perror("sigaltstack");  // Corrección aquí
-	// 	destroy_stack(new_stack);
-	// 	return NULL;
-	// }
+	if (sigaltstack(new_stack, NULL) == -1) {
+		perror("sigaltstack");  // Corrección aquí
+		destroy_stack(new_stack);
+		return NULL;
+	}
 
 	return new_stack;
 }
@@ -59,12 +59,13 @@ main(void)
 	stack_t *stack = init_stack();
 	init_shell();
 
-	// if (!stack) {
-	// 	return 0;
-	// }
+	if (!stack) {
+		return 0;
+	}
 
 	run_shell();
 
+	int result = sigaltstack(NULL, NULL); 
 	destroy_stack(stack);
 
 	return 0;
