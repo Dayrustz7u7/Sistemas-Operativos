@@ -65,7 +65,7 @@ main(void)
 
 	run_shell();
 
-	int result = sigaltstack(NULL, NULL); 
+	int result = sigaltstack(NULL, NULL);
 	destroy_stack(stack);
 
 	return 0;

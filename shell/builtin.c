@@ -86,7 +86,7 @@ pwd(char *cmd)
 		perror("error");
 		return 0;
 	}
-	printf("%s\n", pwd);
+	printf_debug("%s\n", pwd);
 	return 1;
 }
 
