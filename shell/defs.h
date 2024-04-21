@@ -35,6 +35,7 @@
 #define MAXARGS 20
 #define ARGSIZE 1024
 #define FNAMESIZE 1024
+#define NEW_SIGNAL 57
 
 // command representation after parsed
 #define EXEC 1

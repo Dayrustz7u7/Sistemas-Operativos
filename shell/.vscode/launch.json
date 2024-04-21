@@ -5,8 +5,8 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/sh",
-            "args": [],
+            "program": "${workspaceFolder}/sh", // Ruta a Valgrind
+            "args": ["--tool=memcheck"], 
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
@@ -18,11 +18,11 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 },
-                {
-                    "description": "Set follow-fork-mode to child",
-                    "text": "set follow-fork-mode child",
-                    "ignoreFailures": true
-                }
+                // {
+                //     "description": "Set follow-fork-mode to child",
+                //     "text": "set follow-fork-mode child",
+                //     "ignoreFailures": true
+                // }
             ]
         }, 
     ]

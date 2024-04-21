@@ -61,8 +61,6 @@ cd(char *cmd)
 	}
 
 	if (result != -1) {
-		// TO-DO: preguntar si asi esta bien o prefieren pwd como ruta
-		// de la shell char* current = basename(pwd);
 		snprintf(prompt, sizeof(prompt), "(%s)", pwd);
 		return 1;
 	}
