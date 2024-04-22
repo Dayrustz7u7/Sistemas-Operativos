@@ -143,5 +143,12 @@ Recuperación de recursos: Al finalizar un proceso en segundo plano, es posible 
 
 En resumen, el uso de señales permite a la shell detectar y responder de manera adecuada cuando los procesos en segundo plano finalizan, lo que garantiza un comportamiento más robusto y una mejor experiencia de usuario.
 
+#### Explicacion del mecanismo 
 
+El mencanismo del manejo de procesos en segundo plano es el siguiente:
+
+- En primera instancia se genera una pila dinamica que viene dada por el struct stack_t en, este struct correspone a un tipo de estructura especifica que sera manejada por el kernel para ser una nueva signal stack que almacena y gestiona los signals lanzados por el kernel. Como es una pila dinamica se deben realizar las revisiones correspondientes relacianadas al manejo de memoria. La pila tiene un size dado por SIGSTKSZ que segun la documentacion oficial esta probado que dicho tama;o es suficiente para la gestion de las signals 
+- Una vez iniciada la pila de manera correcta se se debe setear en el sistema para que sea la nueva signal stack 
+- Para manejo de procesos en segundo plano se deben setear una funcion aka handler para manejar las signals deseadas, en este caso, el handler se activa automaticamente cuando la signal SIGCHLD se activa. En este caso sigaction setea a que signal se desea responder y con que funcion se hace 
+- Como la shell lanza mas de un proceso hijo es conveniente separar en dos grupos los procesos, con la ayuda de setpgid(2) y getppid(2) se setea a que los procesos que no van a ser ejecutados en segundo plano tengan el mismo gpid que su padre asi se evita la activacion de SIGCHLD y que no se imprima por pantalla otros procesos que se lanzan adicionales (por ejemplo los que se lanzarian dentro de un comando pipe)
 ---
