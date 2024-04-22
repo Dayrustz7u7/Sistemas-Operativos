@@ -221,7 +221,7 @@ parse_line(char *buf)
 {
 	struct cmd *r, *l;
 
-	char *right = split_line(buf, 124);
+	char *right = split_line(buf, '|');
 
 	if (block_contains(right, '|') >= 0) {
 		r = parse_line(right);
