@@ -43,13 +43,12 @@ Este mecanismo permite que la shell ejecute comandos tanto en primer plano como 
 
 #### Investigar el significado de 2>&1, explicar cómo funciona su forma general
 
-(Respuesta hecha mal y pronto por mi) El significado de 2>&1 es que redirecciona el flujo del file descriptor dos, que es std_err y lo redirige al mismo lugar donde apunta el fd 1 (RECORDAR QUE LOS FD SON PUNTEROS UNICAMENTE). Basicamente, redirige la salida estandar de error hacia el mismo lugar donde esta dirigido la salida estandar, util para debuggear a veces dijo el profe, redirigiendo todo a un archivo jason para despues leerlo.
+El comando de redireccion 2>&1 se utiliza para redireccionar el flujo del file descriptor 2, que corresponde a la salida de error estándar (stderr), al mismo destino que el file descriptor 1, que es la salida estándar (stdout). La parte 2> se refiere al fd 2, que es para stderr, cuando se usa 2> se está redirigiendo la salida de error estándar y la parte &1 se refiere al fd 1, que es para stdout. Al agregar &1, se está redirigiendo la salida de error estándar al mismo lugar que la salida estándar En otras palabras, esta construcción permite que los mensajes de error generados por un comando se dirijan al mismo destino que los mensajes de salida estándar. 
+Para una mejor comprension es importante comprender que los file descriptors no son mas que punteros, donde el fd 1 apunta a la salida estándar y el fd 2 apunta a la salida de error estándar. Al utilizar 2>&1, esencialmente se está redireccionando el puntero de la salida de error para que apunte al mismo destino que el puntero de la salida estándar. Este mecanismo de redirección puede resultar útil en situaciones de debugging cuando se desea capturar tanto la salida estándar como los mensajes de error en un único archivo de registro para un análisis posterior.
 
-El comando 2>&1 se utiliza para redirigir la salida de error estándar (stderr) al mismo lugar que la salida estándar (stdout). La parte 2> se refiere al descriptor de archivo 2, que es el descriptor de archivo para stderr. Cuando se usa 2>, se está redirigiendo la salida de error estándar. &1: La parte &1 se refiere al descriptor de archivo 1, que es el descriptor de archivo para stdout. Al agregar &1, se está redirigiendo la salida de error estándar al mismo lugar que la salida estándar. Esto es útil cuando se desea capturar tanto la salida estándar como la salida de error en el mismo lugar, por ejemplo, en un archivo de texto o en la pantalla.
 
-#### Mostrar qué sucede con la salida de cat out.txt en el ejemplo. Luego repetirlo, invirtiendo el orden de las redirecciones (es decir, 2>&1 >out.txt). ¿Cambió algo? Compararlo con el comportamiento en bash(1).
-
-Falta correrlo en nuestro programa!
+#### Mostrar qué sucede con la salida de cat out.txt en el comando a continuacion. Luego repetirlo, invirtiendo el orden de las redirecciones (es decir, 2>&1 >out.txt). ¿Cambió algo? Compararlo con el comportamiento en bash(1).
+## Comando: ls -C /home /noexiste >out.txt 2>&1
 
 "ls -C /home /noexiste" Este comando ls -C listaría los contenidos de los directorios /home y /noexiste. La opción -C formatea la salida en columnas. Si el directorio /noexiste no existe, ls generará un mensaje de error que será enviado a stderr.
 
@@ -57,10 +56,10 @@ Falta correrlo en nuestro programa!
 
 "2>&1" Esto redirige el stderr al mismo lugar que el stdout. En otras palabras, cualquier mensaje de error que normalmente se imprimiría en la consola (en stderr) se enviará al mismo destino que la salida estándar (en stdout), es decir, al archivo out.txt.
 
-Comportamiento de bash: 
-ls: cannot access '/noexiste': No such file or directory 
+## Luego repetirlo, invirtiendo el orden de las redirecciones (es decir, 2>&1 >out.txt). ¿Cambió algo? Compararlo con el comportamiento en bash(1).
 
-Si invertimos el orden ("2>&1 >out.txt") lo que pasa es que primero se redirige la salida estándar de error a donde apunta la salida estándar, que en este caso es la consola. Luego se redirige la salida estándar al archivo out.txt, pero la salida estándar de error no se modifica. Por lo tanto solo se escribe la salida de ls estándar pero no la de error en el archivo.
+Teoricamente obtendremos el mismo resultado, dado que 2>&1 lo que hace es redireccionar la salida de error y hacer que apunte al puntero del fd1, por lo que si cambia el valor del fd1, es decir, la salida estandar, cambiara tambien la salida del std error.
+Sin embargo, cuando lo ejecutamos en el bash, el error se imprimio en consola y no en el archivo. Mientras que en nuestra shell si esta cumpliendo el comportamiento esperado.
 
 ---
 
@@ -70,8 +69,20 @@ Si invertimos el orden ("2>&1 >out.txt") lo que pasa es que primero se redirige 
 #### ¿Cambia en algo?
 #### ¿Qué ocurre si, en un pipe, alguno de los comandos falla? Mostrar evidencia (e.g. salidas de terminal) de este comportamiento usando bash. Comparar con su implementación.
 
-FALTA REALIZAR ESTE
-Primero hay que analizar que ocurre con el exit code al ejecutar un pipe y luego correr un pipe que rompa, esto es basicamente que hay que ejecutar un comando que falle dentro de pipe (En nuestra terminal) y compararlo con el mismo comando en bash (la terminal de linux). 
+Si alguno de los comandos dentro de un pipe falla, el resultado global del pipe también se considerará como fallido. El comportamiento específico depende de cómo maneje la shell los errores en los pipes. En general, cuando un comando en un pipe falla, la shell detiene la ejecución de los comandos restantes en el pipe y devuelve un código de salida que indica que ha ocurrido un error. Este código de salida puede ser utilizado por la shell o por otros procesos para tomar decisiones o realizar acciones adicionales según sea necesario.
+
+Resultado de comando escrito en bash:
+
+nachotower@:~$ cat noexiste.txt | grep "padron"
+cat: noexiste.txt: No such file or directory
+
+Resultado de comando escrito en nuestra shell:
+
+(/home/nachotower) 
+$ cat noexiste | grep "padron" 
+cat: standard output: Bad file descriptor
+grep: (standard input): Bad file descriptor
+
 
 ---
 
@@ -85,8 +96,9 @@ Las variables de entorno temporarias se hacen luego del fork debido a que en est
 #### ¿El comportamiento resultante es el mismo que en el primer caso? Explicar qué sucede y por qué.
 #### Describir brevemente (sin implementar) una posible implementación para que el comportamiento sea el mismo.
 
-FALTA 
+No es el mismo, ya que al pasarle un arreglo de variables de entorno establecidos por fuera, estas mismas se utilizarán en el proceso hijo y no las que se encuentran dentro de la estructura de variables environ.
 
+Ahora, para que el comportamiento sea de la misma manera como lo tenemos establecido, es necesario que dicho arreglo pasado al exec(3) como tercer argumento sea NULL. Esto se debe a que, según lo establecido, utilizará las del environ si se las pasa como tercer argumento, sumándole las variables del entorno establecidas por el proceso actual. Entonces, la solución sería crear un array de variables de entorno que contenga las variables del environ más las del proceso actual, y este mismo arreglo pasarlo a la función exec(3).
 
 ---
 
@@ -145,10 +157,10 @@ En resumen, el uso de señales permite a la shell detectar y responder de manera
 
 #### Explicacion del mecanismo 
 
-El mencanismo del manejo de procesos en segundo plano es el siguiente:
+El mecanismo del manejo de procesos en segundo plano es el siguiente:
 
-- En primera instancia se genera una pila dinamica que viene dada por el struct stack_t en, este struct correspone a un tipo de estructura especifica que sera manejada por el kernel para ser una nueva signal stack que almacena y gestiona los signals lanzados por el kernel. Como es una pila dinamica se deben realizar las revisiones correspondientes relacianadas al manejo de memoria. La pila tiene un size dado por SIGSTKSZ que segun la documentacion oficial esta probado que dicho tama;o es suficiente para la gestion de las signals 
-- Una vez iniciada la pila de manera correcta se se debe setear en el sistema para que sea la nueva signal stack 
-- Para manejo de procesos en segundo plano se deben setear una funcion aka handler para manejar las signals deseadas, en este caso, el handler se activa automaticamente cuando la signal SIGCHLD se activa. En este caso sigaction setea a que signal se desea responder y con que funcion se hace 
-- Como la shell lanza mas de un proceso hijo es conveniente separar en dos grupos los procesos, con la ayuda de setpgid(2) y getppid(2) se setea a que los procesos que no van a ser ejecutados en segundo plano tengan el mismo gpid que su padre asi se evita la activacion de SIGCHLD y que no se imprima por pantalla otros procesos que se lanzan adicionales (por ejemplo los que se lanzarian dentro de un comando pipe)
+- En primera instancia se genera una pila dinámica que viene dada por el struct stack_t. Este struct corresponde a un tipo de estructura específica que será manejada por el kernel para ser una nueva signal stack que almacena y gestiona los signals lanzados por el kernel. Como es una pila dinámica, se deben realizar las revisiones correspondientes relacionadas al manejo de memoria. La pila tiene un tamaño dado por SIGSTKSZ que, según la documentación oficial, está probado que dicho tamaño es suficiente para la gestión de las signals.
+- Una vez iniciada la pila de manera correcta, se debe setear en el sistema para que sea la nueva signal stack.
+- Para el manejo de procesos en segundo plano, se deben setear una función, también conocida como handler, para manejar las signals deseadas. En este caso, el handler se activa automáticamente cuando la signal SIGCHLD se activa. En este caso, sigaction setea a qué signal se desea responder y con qué función se hace.
+- Como la shell lanza más de un proceso hijo, es conveniente separarlos en dos grupos. Con la ayuda de setpgid(2) y getppid(2), se setea que los procesos que no van a ser ejecutados en segundo plano tengan el mismo gpid que su padre, así se evita la activación de SIGCHLD y que no se imprima por pantalla otros procesos que se lanzan adicionales (por ejemplo, los que se lanzarían dentro de un comando pipe).
 ---
