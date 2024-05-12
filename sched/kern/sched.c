@@ -12,7 +12,6 @@ void
 sched_yield(void)
 {
 	struct Env *other; 
-
 #ifdef SCHED_ROUND_ROBIN
 	// Implement simple round-robin scheduling.
 	//
@@ -32,37 +31,29 @@ sched_yield(void)
 	// Your code here - Round robin
 	
 	int index = 0;  /// i que uso tomas 
+	
 	other = curenv; 
+	
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
 		index = ENVX(curenv->env_id) + 1;  /// Esto obtiene el indice del actual (parece)
 	}
 
-	int idx_aux = index;
+	for (int i = 0; i <= NENV; i++) {
+		int j = (index + i) % NENV; 
+		struct Env *env = &envs[j]; 
 	
-	
-	while (index < NENV){
-		other = &envs[index];
-		if (other->env_status == ENV_RUNNABLE) {
-			curenv = other; 
-			break;
+		if (env->env_status == ENV_RUNNABLE ) {
+			env_run(env);
 		}
-		index ++; 
-	}
 
-	for (int i = 0; i <= idx_aux; i++) {
-		if (envs[i].env_status == ENV_RUNNABLE || envs[i].env_status == ENV_RUNNING) {
-			env_run(&envs[i]);
+		if (env->env_status == ENV_RUNNING) {
+			env_run(env);
 		}
 	}
 
-	if (curenv && curenv->env_status == ENV_RUNNABLE) {
-		env_run(curenv);
+	if (other && (other->env_status == ENV_RUNNING))  {
+		env_run(other);
 	}
-
-	if (other && other->env_status == ENV_RUNNABLE) {
-		env_run(other); 
-	}
-
 
 #endif /// Comento un toque esto para poder ver el codigo bien en el ide
 
