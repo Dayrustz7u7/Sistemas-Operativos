@@ -9,6 +9,11 @@
 
 .globl context_switch;
 context_switch:
+	//Preparamos la cpu para volver al modo usuario
+	//obtenemos y alocamos en cpu el struct trapframe
+	//iret
+	
 
 spin:
 	jmp spin
+
