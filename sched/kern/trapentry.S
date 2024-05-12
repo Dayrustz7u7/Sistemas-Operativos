@@ -80,5 +80,6 @@ TRAPHANDLER_NOEC(trap48, T_SYSCALL)
 _alltraps:
 	pushl %ds
     pushl %es    //Estos son los registros de segmentacion.
-	pushal        //Estos serian los tf_regs (del archivo trap.h)
+	pushal       //Estos serian los tf_regs (del archivo trap.h)
+	push %esp
 	call trap
