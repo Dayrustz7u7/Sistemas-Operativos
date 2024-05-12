@@ -55,6 +55,13 @@ sched_yield(void)
 		}
 	}
 
+	if (curenv && curenv->env_status == ENV_RUNNABLE) {
+		env_run(curenv);
+	}
+
+	if (other) {
+	}
+
 #endif /// Comento un toque esto para poder ver el codigo bien en el ide
 
 #ifdef SCHED_PRIORITIES
