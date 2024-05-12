@@ -11,7 +11,7 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
-	struct Env *other; 
+
 #ifdef SCHED_ROUND_ROBIN
 	// Implement simple round-robin scheduling.
 	//
@@ -30,29 +30,31 @@ sched_yield(void)
 
 	// Your code here - Round robin
 	
-	int index = 0;  /// i que uso tomas 
-	
-	other = curenv; 
+	int act_pos = 0;  /// i que uso tomas 
 	
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
-		index = ENVX(curenv->env_id) + 1;  /// Esto obtiene el indice del actual (parece)
+		act_pos = ENVX(curenv->env_id) + 1;  /// Obtengo el indice del siguente proceso 
 	}
 
-	for (int i = 0; i <= NENV; i++) {
-		int j = (index + i) % NENV; 
+	/// Busco todos los procesos que pueden correr a partir del proceso actual si es que hay uno actual
+	for (int i = 0; i < NENV; i++) {
+		int j = act_pos + i; 
 		struct Env *env = &envs[j]; 
-	
+		if (env->env_status == ENV_RUNNABLE ) {
+			env_run(env);
+		}
+	}
+
+	for (int j = 0; j < act_pos; j++) {
+		struct Env *env = &envs[j]; 
 		if (env->env_status == ENV_RUNNABLE ) {
 			env_run(env);
 		}
 
-		if (env->env_status == ENV_RUNNING) {
-			env_run(env);
-		}
 	}
 
-	if (other && (other->env_status == ENV_RUNNING))  {
-		env_run(other);
+	if (curenv && curenv->env_status == ENV_RUNNING)  {
+		env_run(curenv);
 	}
 
 #endif /// Comento un toque esto para poder ver el codigo bien en el ide
@@ -68,12 +70,6 @@ sched_yield(void)
 
 	// Your code here - Priorities
 #endif
-
-	// Without scheduler, keep runing the last environment while it exists
-	if (curenv) {
-		env_run(curenv);
-	}
-
 	// sched_halt never returns
 	sched_halt();
 }
