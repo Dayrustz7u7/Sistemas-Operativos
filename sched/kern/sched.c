@@ -32,8 +32,9 @@ sched_yield(void)
 	// Your code here - Round robin
 	
 	int index = 0;  /// i que uso tomas 
+	other = curenv; 
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
-		index = ENVX(curenv->env_id);  /// Esto obtiene el indice del actual (parece)
+		index = ENVX(curenv->env_id) + 1;  /// Esto obtiene el indice del actual (parece)
 	}
 
 	int idx_aux = index;
@@ -42,7 +43,6 @@ sched_yield(void)
 	while (index < NENV){
 		other = &envs[index];
 		if (other->env_status == ENV_RUNNABLE) {
-			// env_run(other);  // Si el proximo se puede correr, lo corro.
 			curenv = other; 
 			break;
 		}
@@ -59,8 +59,10 @@ sched_yield(void)
 		env_run(curenv);
 	}
 
-	if (other) {
+	if (other && other->env_status == ENV_RUNNABLE) {
+		env_run(other); 
 	}
+
 
 #endif /// Comento un toque esto para poder ver el codigo bien en el ide
 
