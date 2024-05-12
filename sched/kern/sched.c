@@ -28,6 +28,43 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
+	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
+		struct Env *e = curenv;
+		while (e->env_link !=
+		       NULL) {  // Mientras que el proximo no sea nulo.
+			e = e->env_link;
+			if (e->env_status == ENV_RUNNABLE) {
+				env_run(e);  // Si el proximo se puede correr, lo corro.
+				return;
+			}
+		}
+		int i = 0;
+		while (envs[i] !=
+		       curenv) {  // Ya vi todos los elementos proximos al actual, ahora veo los previos.
+			e = &envs[i];
+			if (e->env_status == ENV_RUNNABLE) {
+				env_run(e);  // Si el proximo se puede correr, lo corro.
+				return;
+			}
+			i++;
+		}  // Si no encontro ningun elemento para correr antes ni despues, volvemos a ejecutar el actual.
+		if (curenv->env_status == ENV_RUNNING) {
+			env_run(curenv);  // Solo lo corro si sigue estando para running.
+			return;
+		}
+
+
+	} else {  // Caso mas sencillo, simplemente corro el primero que encuentre runnable
+		int i;
+		for (i = 0; i < NENV; i++) {
+			if (envs[i].env_status == ENV_RUNNABLE) {
+				env_run(&envs[i]);
+				return;
+			}
+		}
+	}
+	// Si no que hago? Un shutdown? eso no entendi.
+	sched_halt();
 #endif
 
 #ifdef SCHED_PRIORITIES
