@@ -504,10 +504,13 @@ env_run(struct Env *e)
     //       3. Set its status to ENV_RUNNING,
     //       4. Update its 'env_runs' counter,
     //       5. Use env_load_pgdir() to switch to its address space.
+
+	if(curenv){
+    	if (e->env_status == ENV_RUNNING) {
+    	    e->env_status = ENV_RUNNABLE;
+    	}	
+	}
    
-    if (e->env_status == ENV_RUNNING) {
-        e->env_status = ENV_RUNNABLE;
-    }
     // Hint: This function loads the new environment's state from
     //    e->env_tf.  Go back through the code you wrote above
     //    and make sure you have set the relevant parts of

@@ -11,9 +11,11 @@
 context_switch:
 	//Preparamos la cpu para volver al modo usuario
 	//obtenemos y alocamos en cpu el struct trapframe
-	//iret
-	
-
+	movl 4(%esp),%esp // Se carga el trapframe ( contenido) al %esp
+	//popal
+	//pop %es
+	//pop %ds
+	//iret   
 spin:
 	jmp spin
 
