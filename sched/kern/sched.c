@@ -5,12 +5,14 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
-void sched_halt(void);
+void sched_halt(void); 
 
 // Choose a user environment to run and run it.
 void
 sched_yield(void)
 {
+	struct Env *other; 
+
 #ifdef SCHED_ROUND_ROBIN
 	// Implement simple round-robin scheduling.
 	//
@@ -28,44 +30,50 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
+	
+	int index = 0;  /// i que uso tomas 
+	
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
-		struct Env *e = curenv;
-		while (e->env_link !=
-		       NULL) {  // Mientras que el proximo no sea nulo.
-			e = e->env_link;
-			if (e->env_status == ENV_RUNNABLE) {
-				env_run(e);  // Si el proximo se puede correr, lo corro.
-				return;
-			}
-		}
-		int i = 0;
-		while (envs[i] !=
-		       curenv) {  // Ya vi todos los elementos proximos al actual, ahora veo los previos.
-			e = &envs[i];
-			if (e->env_status == ENV_RUNNABLE) {
-				env_run(e);  // Si el proximo se puede correr, lo corro.
-				return;
-			}
-			i++;
-		}  // Si no encontro ningun elemento para correr antes ni despues, volvemos a ejecutar el actual.
-		if (curenv->env_status == ENV_RUNNING) {
-			env_run(curenv);  // Solo lo corro si sigue estando para running.
-			return;
-		}
-
-
-	} else {  // Caso mas sencillo, simplemente corro el primero que encuentre runnable
-		int i;
-		for (i = 0; i < NENV; i++) {
-			if (envs[i].env_status == ENV_RUNNABLE) {
-				env_run(&envs[i]);
-				return;
-			}
-		}
+		index = ENVX(curenv->env_id);  /// Esto obtiene el indice del actual (parece)
 	}
-	// Si no que hago? Un shutdown? eso no entendi.
-	sched_halt();
-#endif
+
+	for( int i = index; index < NENV; index ++ ) {  // Mientras que el proximo no sea nulo.
+		other = &envs[index];
+		if (other->env_status == ENV_RUNNABLE) {
+			// env_run(other);  // Si el proximo se puede correr, lo corro.
+			curenv = other; 
+			break;
+		}
+		cprintf("indice: %d\n", index); 
+		index ++; 
+	}
+
+	// while (&envs[index] !=
+	// 		curenv) {  // Ya vi todos los elementos proximos al actual, ahora veo los previos.
+	// 	e = &envs[index];
+	// 	if (e->env_status == ENV_RUNNABLE) {
+	// 		env_run(e);  // Si el proximo se puede correr, lo corro.
+	// 		return;
+	// 	}
+	// 	index++;
+	// }  // Si no encontro ningun elemento para correr antes ni despues, volvemos a ejecutar el actual.
+	// if (curenv->env_status == ENV_RUNNING) {
+	// 	env_run(curenv);  // Solo lo corro si sigue estando para running.
+	// 	return;
+	// }
+
+
+	// } else {  // Caso mas sencillo, simplemente corro el primero que encuentre runnable
+	// 	int i;
+	// 	for (i = 0; i < NENV; i++) {
+	// 		if (envs[i].env_status == ENV_RUNNABLE) {
+	// 			env_run(&envs[i]);
+	// 			return;
+	// 		}
+	// 	}
+	// }
+	
+#endif /// Comento un toque esto para poder ver el codigo bien en el ide
 
 #ifdef SCHED_PRIORITIES
 	// Implement simple priorities scheduling.
