@@ -8,6 +8,15 @@
 void sched_halt(void); 
 
 // Choose a user environment to run and run it.
+
+/// Agrego funcion auxiliar para ahcer legible el codigo
+void check_and_run(int j) {
+	struct Env *env = &envs[j]; 
+	if (env->env_status == ENV_RUNNABLE) {
+		env_run(env); 
+	}
+}
+
 void
 sched_yield(void)
 {
@@ -38,19 +47,11 @@ sched_yield(void)
 
 	/// Busco todos los procesos que pueden correr a partir del proceso actual si es que hay uno actual
 	for (int i = 0; i < NENV; i++) {
-		int j = act_pos + i; 
-		struct Env *env = &envs[j]; 
-		if (env->env_status == ENV_RUNNABLE ) {
-			env_run(env);
-		}
+		check_and_run(j); 
 	}
 
 	for (int j = 0; j < act_pos; j++) {
-		struct Env *env = &envs[j]; 
-		if (env->env_status == ENV_RUNNABLE ) {
-			env_run(env);
-		}
-
+		check_and_run(j); 
 	}
 
 	if (curenv && curenv->env_status == ENV_RUNNING)  {
