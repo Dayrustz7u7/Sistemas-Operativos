@@ -49,7 +49,8 @@ sched_yield(void)
 	for (int i = 0; i < NENV; i++) {
 		check_and_run(j); 
 	}
-
+	
+	/// Busco los procesos anteriores a ver cuales pueden correr 
 	for (int j = 0; j < act_pos; j++) {
 		check_and_run(j); 
 	}
