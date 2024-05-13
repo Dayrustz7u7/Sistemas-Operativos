@@ -5,22 +5,23 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
-void sched_halt(void); 
+void sched_halt(void);
 
 // Choose a user environment to run and run it.
 
 /// Agrego funcion auxiliar para ahcer legible el codigo
-void check_and_run(int j) {
-	struct Env *env = &envs[j]; 
+void
+check_and_run(int j)
+{
+	struct Env *env = &envs[j];
 	if (env->env_status == ENV_RUNNABLE) {
-		env_run(env); 
+		env_run(env);
 	}
 }
 
 void
 sched_yield(void)
 {
-
 #ifdef SCHED_ROUND_ROBIN
 	// Implement simple round-robin scheduling.
 	//
@@ -38,28 +39,29 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
-	
-	int act_pos = 0;  /// i que uso tomas 
-	
+
+	int act_pos = 0;  /// i que uso tomas
+
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
-		act_pos = ENVX(curenv->env_id) + 1;  /// Obtengo el indice del siguente proceso 
+		act_pos = ENVX(curenv->env_id) +
+		          1;  /// Obtengo el indice del siguente proceso
 	}
 
 	/// Busco todos los procesos que pueden correr a partir del proceso actual si es que hay uno actual
 	for (int i = 0; i < NENV; i++) {
-		check_and_run(j); 
-	}
-	
-	/// Busco los procesos anteriores a ver cuales pueden correr 
-	for (int j = 0; j < act_pos; j++) {
-		check_and_run(j); 
+		check_and_run(j);
 	}
 
-	if (curenv && curenv->env_status == ENV_RUNNING)  {
+	/// Busco los procesos anteriores a ver cuales pueden correr
+	for (int j = 0; j < act_pos; j++) {
+		check_and_run(j);
+	}
+
+	if (curenv && curenv->env_status == ENV_RUNNING) {
 		env_run(curenv);
 	}
 
-#endif /// Comento un toque esto para poder ver el codigo bien en el ide
+#endif  /// Comento un toque esto para poder ver el codigo bien en el ide
 
 #ifdef SCHED_PRIORITIES
 	// Implement simple priorities scheduling.

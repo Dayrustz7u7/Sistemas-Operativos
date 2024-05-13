@@ -506,13 +506,13 @@ env_run(struct Env *e)
 	//       5. Use env_load_pgdir() to switch to its address space.
 
 	/// Si no hay ninguno seteo el primero
-	if(!curenv) {
-		curenv = e; 
+	if (!curenv) {
+		curenv = e;
 	}
-	
-	/// Si no es el mismo 
-	if ( curenv != e ) {
-		// si esta corriendo 
+
+	/// Si no es el mismo
+	if (curenv != e) {
+		// si esta corriendo
 		if (curenv->env_status == ENV_RUNNING) {
 			curenv->env_status = ENV_RUNNABLE;
 		}
