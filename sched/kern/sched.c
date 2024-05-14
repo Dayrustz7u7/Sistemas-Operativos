@@ -49,6 +49,7 @@ sched_yield(void)
 
 	/// Busco todos los procesos que pueden correr a partir del proceso actual si es que hay uno actual
 	for (int i = 0; i < NENV; i++) {
+		int j = act_pos + i; 
 		check_and_run(j);
 	}
 
