@@ -122,7 +122,7 @@ sched_yield(void)
 
 	//Obtenemos el proceso a correr.
 	int counter = 0;
-	int winner = getrandom(0, tot_tickets); //Tenemos que hacer funcion random.
+	int winner = get_random(0, tot_tickets); //Tenemos que hacer funcion random.
 
 	for (int i = 0; i < NENV; i++){
 		if (envs[i].env_status == ENV_FREE){
@@ -130,7 +130,7 @@ sched_yield(void)
 		}
 		counter += envs[i].tickets;
 		if (counter > winner) {
-			curenv = envs[i]; //Este es el proceso ganador y consecuentemente el que se correra.
+			curenv = &envs[i]; //Este es el proceso ganador y consecuentemente el que se correra.
 			env_run(curenv);
 			break;
 		}
