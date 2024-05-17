@@ -25,10 +25,10 @@ get_tot_tickets()
 {
 	int tot_tickets = 0;
 	for (int i = 0; i < NENV; i++){
-		if (envs[i]->env_status == ENV_FREE){
+		if (envs[i].env_status == ENV_FREE){
 			continue;
 		}
-		tot_tickets += envs[i]->tickets;
+		tot_tickets += envs[i].tickets;
 	}
 	return tot_tickets;
 }
@@ -97,10 +97,10 @@ sched_yield(void)
 	int winner = getrandom(0, tot_tickets); //Tenemos que hacer funcion random.
 
 	for (int i = 0; i < NENV; i++){
-		if (envs[i]->env_status == ENV_FREE){
+		if (envs[i].env_status == ENV_FREE){
 			continue;
 		}
-		counter += envs[i]->tickets;
+		counter += envs[i].tickets;
 		if (counter > winner) {
 			curenv = envs[i]; //Este es el proceso ganador y consecuentemente el que se correra.
 			env_run(curenv);
