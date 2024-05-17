@@ -7,6 +7,10 @@
 
 void sched_halt(void);
 
+//VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
+static unsigned long next = 1;
+//---------------------------------------------------
+
 // Choose a user environment to run and run it.
 
 /// Agrego funcion auxiliar para hacer legible el codigo
@@ -31,6 +35,30 @@ get_tot_tickets()
 		tot_tickets += envs[i].tickets;
 	}
 	return tot_tickets;
+}
+
+// Función srand para establecer la semilla
+ void srand(unsigned int seed) {
+     next = seed;
+ }
+
+// Función para leer el contador de tiempo de CPU
+unsigned int read_cpu_timestamp() {
+    unsigned int low, high;
+    // Ensamblador en línea para leer el registro de contador de tiempo de CPU
+    __asm__ volatile ("rdtsc" : "=a" (low), "=d" (high));
+    return low;
+}
+
+
+// Funcion auxiliar Random()
+int
+get_random(){
+	unsigned int seed = read_cpu_timestamp();
+	srand(seed);
+
+	next = next * 1103515245 + 12345;
+    return (unsigned int)(next / 65536) % 32768;
 }
 
 void
