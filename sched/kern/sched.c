@@ -9,7 +9,7 @@ void sched_halt(void);
 
 // Choose a user environment to run and run it.
 
-/// Agrego funcion auxiliar para ahcer legible el codigo
+/// Agrego funcion auxiliar para hacer legible el codigo
 void
 check_and_run(int j)
 {
@@ -17,6 +17,20 @@ check_and_run(int j)
 	if (env->env_status == ENV_RUNNABLE) {
 		env_run(env);
 	}
+}
+
+/// Funcion auxiliar que retorna un int, indicando cantidad total de tickets.
+int
+get_tot_tickets()
+{
+	int tot_tickets = 0;
+	for (int i = 0; i < NENV; i++){
+		if (envs[i]->env_status == ENV_FREE){
+			continue;
+		}
+		tot_tickets += envs[i]->tickets;
+	}
+	return tot_tickets;
 }
 
 void
@@ -74,6 +88,27 @@ sched_yield(void)
 	// environment is selected and run every time.
 
 	// Your code here - Priorities
+
+	//Obtener la cantidad de tickets.
+	int tot_tickets = get_tot_tickets(); //DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+
+	//Obtenemos el proceso a correr.
+	int counter = 0;
+	int winner = getrandom(0, tot_tickets); //Tenemos que hacer funcion random.
+
+	for (int i = 0; i < NENV; i++){
+		if (envs[i]->env_status == ENV_FREE){
+			continue;
+		}
+		counter += envs[i]->tickets;
+		if (counter > winner) {
+			curenv = envs[i]; //Este es el proceso ganador y consecuentemente el que se correra.
+			env_run(curenv);
+			break;
+		}
+	}
+
+
 #endif
 	// sched_halt never returns
 	sched_halt();
