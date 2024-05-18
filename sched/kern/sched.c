@@ -31,17 +31,17 @@ can_run(struct Env *env)
 }
 
 /// Funcion auxiliar que retorna un int, indicando cantidad total de tickets.
-int
-get_tot_tickets()
-{
-	int tot_tickets = 0;
-	for (int i = 0; i < NENV; i++) {
-		if (envs[i].env_status == ENV_RUNNABLE) {
-			tot_tickets += envs[i].tickets;
-		}
-	}
-	return tot_tickets;
-}
+// int
+// get_tot_tickets()
+// {
+// 	int tot_tickets = 0;
+// 	for (int i = 0; i < NENV; i++) {
+// 		if (envs[i].env_status == ENV_RUNNABLE) {
+// 			tot_tickets += envs[i].tickets;
+// 		}
+// 	}
+// 	return tot_tickets;
+// }
 
 // Función srand para establecer la semilla
 void
@@ -138,8 +138,19 @@ sched_yield(void)
 	// Your code here - Priorities
 
 	// Obtener la cantidad de tickets.
-	int tot_tickets =
-	        get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+	// int tot_tickets =
+	//         get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+
+	int tot_tickets = 0;
+	int pos = 0;
+	int idx_possible_winners [NENV];
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			tot_tickets += envs[i].tickets;
+			idx_possible_winners[pos] = i;
+			pos++;
+		}
+	}
 
 	if (!tot_tickets) {
 		if (curenv && curenv->env_status == ENV_RUNNING) {
@@ -147,6 +158,7 @@ sched_yield(void)
 				curenv->tickets--;
 				env_run(curenv);
 			} else {
+				curenv->tickets++; //Si no hay mas tickets hay que sumarle, sino queda un proceso que no corre nunca.
 				sched_halt();
 			}
 		}
@@ -157,20 +169,37 @@ sched_yield(void)
 	int winner =
 	        get_random(tot_tickets);  // Tenemos que hacer funcion random.
 
-	for (int i = 0; i < NENV; i++) {
-		counter += envs[i].tickets;
-		if (envs[i].env_status != ENV_RUNNABLE) {
-			continue;
-		}
+	int j = 0;
+	while (j < pos){
+		counter += envs[idx_possible_winners[j]].tickets;
+
 		if (counter < winner) {
 			continue;
 		}
 
 		if (counter > winner) {
 			// Este es el proceso ganador y consecuentemente el que se correra.
-			env_run(&envs[i]);
+			env_run(&envs[idx_possible_winners[j]]);
+			break;
 		}
 	}
+
+	
+
+	// for (int i = 0; i < NENV; i++) {
+	// 	counter += envs[i].tickets;
+	// 	if (envs[i].env_status != ENV_RUNNABLE) {
+	// 		continue;
+	// 	}
+	// 	if (counter < winner) {
+	// 		continue;
+	// 	}
+
+	// 	if (counter > winner) {
+	// 		// Este es el proceso ganador y consecuentemente el que se correra.
+	// 		env_run(&envs[i]);
+	// 	}
+	// }
 
 	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
 	// 	env_run(curenv);
