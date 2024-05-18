@@ -7,7 +7,7 @@
 
 void sched_halt(void);
 
-//VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
+// VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
 static unsigned long next = 1;
 //---------------------------------------------------
 
@@ -23,7 +23,7 @@ check_and_run(int j)
 	}
 }
 
-///Funcion auxiliar para dejar el codigo mas prolijo.
+/// Funcion auxiliar para dejar el codigo mas prolijo.
 bool
 can_run(struct Env *env)
 {
@@ -35,7 +35,7 @@ int
 get_tot_tickets()
 {
 	int tot_tickets = 0;
-	for (int i = 0; i < NENV; i++){
+	for (int i = 0; i < NENV; i++) {
 		if (envs[i].env_status == ENV_RUNNABLE) {
 			tot_tickets += envs[i].tickets;
 		}
@@ -44,35 +44,41 @@ get_tot_tickets()
 }
 
 // Función srand para establecer la semilla
- void srand(unsigned int seed) {
-     next = seed;
- }
+void
+srand(unsigned int seed)
+{
+	next = seed;
+}
 
 // Función para leer el contador de tiempo de CPU
-unsigned int read_cpu_timestamp() {
-    unsigned int low, high;
-    // Ensamblador en línea para leer el registro de contador de tiempo de CPU
-    __asm__ volatile ("rdtsc" : "=a" (low), "=d" (high));
-    return low;
+unsigned int
+read_cpu_timestamp()
+{
+	unsigned int low, high;
+	// Ensamblador en línea para leer el registro de contador de tiempo de CPU
+	__asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
+	return low;
 }
 
 
 // Funcion auxiliar Random()
-unsigned int get_random(unsigned int total_ticks) {
-    // Initialize seed using CPU timestamp
-    static unsigned long seed = 0;
-    if (seed == 0) {
-        seed = read_cpu_timestamp();
-    }
+unsigned int
+get_random(unsigned int total_ticks)
+{
+	// Initialize seed using CPU timestamp
+	static unsigned long seed = 0;
+	if (seed == 0) {
+		seed = read_cpu_timestamp();
+	}
 
-    // Constants for the LCG
-    const unsigned long a = 1103515245;
-    const unsigned long c = 12345;
-    const unsigned long m = 1UL << 31; // 2^31
+	// Constants for the LCG
+	const unsigned long a = 1103515245;
+	const unsigned long c = 12345;
+	const unsigned long m = 1UL << 31;  // 2^31
 
-    // Update the seed and generate the next random number
-    seed = (a * seed + c) % m;
-    return (unsigned int)(seed % (total_ticks + 1));
+	// Update the seed and generate the next random number
+	seed = (a * seed + c) % m;
+	return (unsigned int) (seed % (total_ticks + 1));
 }
 
 void
@@ -105,7 +111,7 @@ sched_yield(void)
 
 	/// Busco todos los procesos que pueden correr a partir del proceso actual si es que hay uno actual
 	for (int i = 0; i < NENV; i++) {
-		int j = act_pos + i; 
+		int j = act_pos + i;
 		check_and_run(j);
 	}
 
@@ -131,41 +137,43 @@ sched_yield(void)
 
 	// Your code here - Priorities
 
-	//Obtener la cantidad de tickets.
-	int tot_tickets = get_tot_tickets(); //DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+	// Obtener la cantidad de tickets.
+	int tot_tickets =
+	        get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
 
 	if (!tot_tickets) {
 		if (curenv && curenv->env_status == ENV_RUNNING) {
 			if (curenv->tickets) {
-				curenv->tickets--; 
-				env_run(curenv); 
+				curenv->tickets--;
+				env_run(curenv);
 			} else {
-				sched_halt(); 
+				sched_halt();
 			}
-		} 
+		}
 	}
 
-	//Obtenemos el proceso a correr.
+	// Obtenemos el proceso a correr.
 	int counter = 0;
-	int winner = get_random(tot_tickets); //Tenemos que hacer funcion random. 
+	int winner =
+	        get_random(tot_tickets);  // Tenemos que hacer funcion random.
 
-	for (int i = 0; i < NENV; i++){
+	for (int i = 0; i < NENV; i++) {
 		counter += envs[i].tickets;
 		if (envs[i].env_status != ENV_RUNNABLE) {
 			continue;
 		}
-		if (counter < winner ) {
+		if (counter < winner) {
 			continue;
 		}
-  
+
 		if (counter > winner) {
-			 //Este es el proceso ganador y consecuentemente el que se correra.
+			// Este es el proceso ganador y consecuentemente el que se correra.
 			env_run(&envs[i]);
-		}	
+		}
 	}
 
 	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
-	// 	env_run(curenv); 
+	// 	env_run(curenv);
 	// }
 
 
