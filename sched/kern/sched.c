@@ -36,9 +36,9 @@ get_tot_tickets()
 {
 	int tot_tickets = 0;
 	for (int i = 0; i < NENV; i++){
-		if (!can_run(&envs[i])){
-			continue;
-		}
+		// if (!can_run(&envs[i])){
+		// 	continue;
+		// }
 		tot_tickets += envs[i].tickets;
 	}
 	return tot_tickets;
@@ -59,13 +59,27 @@ unsigned int read_cpu_timestamp() {
 
 
 // Funcion auxiliar Random()
-int
-get_random(){
-	unsigned int seed = read_cpu_timestamp();
-	srand(seed);
+unsigned int get_random(unsigned int total_ticks) {
+    // Initialize seed using CPU timestamp
+    static unsigned long seed = 0;
+    if (seed == 0) {
+        seed = read_cpu_timestamp();
+    }
 
-	next = next * 1103515245 + 12345;
-    return (unsigned int)(next / 65536) % 32768;
+    // Constants for the LCG
+    const unsigned long a = 1103515245;
+    const unsigned long c = 12345;
+    const unsigned long m = 1UL << 31; // 2^31
+
+    // Update the seed and generate the next random number
+    seed = (a * seed + c) % m;
+    return (unsigned int)(seed % (total_ticks + 1));
+}
+
+void reduce_ticket(struct Env *env) {
+	if (env->env_status) {
+		env->env_status --;
+	}
 }
 
 void
@@ -129,19 +143,23 @@ sched_yield(void)
 
 	//Obtenemos el proceso a correr.
 	int counter = 0;
-	int winner = get_random(0, tot_tickets); //Tenemos que hacer funcion random.
+	int winner = get_random(tot_tickets); //Tenemos que hacer funcion random.
 
 	for (int i = 0; i < NENV; i++){
+		counter += envs[i].tickets;
 		if (!can_run(&envs[i])){
 			continue;
 		}
-		counter += envs[i].tickets;
 		if (counter > winner) {
-			curenv = &envs[i]; //Este es el proceso ganador y consecuentemente el que se correra.
-			env_run(curenv);
-			break;
-		}
+			 //Este es el proceso ganador y consecuentemente el que se correra.
+			env_run(&envs[i]);
+			reduce_ticket(&envs[i]); 
+		}	
 	}
+
+	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
+	// 	env_run(curenv); 
+	// }
 
 
 #endif
