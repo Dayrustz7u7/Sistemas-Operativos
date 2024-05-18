@@ -23,13 +23,20 @@ check_and_run(int j)
 	}
 }
 
+///Funcion auxiliar para dejar el codigo mas prolijo.
+bool
+can_run(struct Env *env)
+{
+	return ((env->env_status == ENV_RUNNABLE) || (env->env_status == ENV_RUNNING));
+}
+
 /// Funcion auxiliar que retorna un int, indicando cantidad total de tickets.
 int
 get_tot_tickets()
 {
 	int tot_tickets = 0;
 	for (int i = 0; i < NENV; i++){
-		if (envs[i].env_status == ENV_FREE){
+		if (!can_run(&envs[i])){
 			continue;
 		}
 		tot_tickets += envs[i].tickets;
@@ -125,7 +132,7 @@ sched_yield(void)
 	int winner = get_random(0, tot_tickets); //Tenemos que hacer funcion random.
 
 	for (int i = 0; i < NENV; i++){
-		if (envs[i].env_status == ENV_FREE){
+		if (!can_run(&envs[i])){
 			continue;
 		}
 		counter += envs[i].tickets;
