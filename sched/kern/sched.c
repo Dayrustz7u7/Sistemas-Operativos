@@ -27,7 +27,7 @@ check_and_run(int j)
 bool
 can_run(struct Env *env)
 {
-	return ((env->env_status == ENV_RUNNABLE) || (env->env_status == ENV_RUNNING));
+	return (env->env_status == ENV_RUNNABLE);
 }
 
 /// Funcion auxiliar que retorna un int, indicando cantidad total de tickets.
@@ -36,10 +36,9 @@ get_tot_tickets()
 {
 	int tot_tickets = 0;
 	for (int i = 0; i < NENV; i++){
-		// if (!can_run(&envs[i])){
-		// 	continue;
-		// }
-		tot_tickets += envs[i].tickets;
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			tot_tickets += envs[i].tickets;
+		}
 	}
 	return tot_tickets;
 }
@@ -74,12 +73,6 @@ unsigned int get_random(unsigned int total_ticks) {
     // Update the seed and generate the next random number
     seed = (a * seed + c) % m;
     return (unsigned int)(seed % (total_ticks + 1));
-}
-
-void reduce_ticket(struct Env *env) {
-	if (env->env_status) {
-		env->env_status --;
-	}
 }
 
 void
@@ -141,19 +134,33 @@ sched_yield(void)
 	//Obtener la cantidad de tickets.
 	int tot_tickets = get_tot_tickets(); //DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
 
+	if (!tot_tickets) {
+		if (curenv && curenv->env_status == ENV_RUNNING) {
+			if (curenv->tickets) {
+				curenv->tickets--; 
+				env_run(curenv); 
+			} else {
+				sched_halt(); 
+			}
+		} 
+	}
+
 	//Obtenemos el proceso a correr.
 	int counter = 0;
-	int winner = get_random(tot_tickets); //Tenemos que hacer funcion random.
+	int winner = get_random(tot_tickets); //Tenemos que hacer funcion random. 
 
 	for (int i = 0; i < NENV; i++){
 		counter += envs[i].tickets;
-		if (!can_run(&envs[i])){
+		if (envs[i].env_status != ENV_RUNNABLE) {
 			continue;
 		}
+		if (counter < winner ) {
+			continue;
+		}
+  
 		if (counter > winner) {
 			 //Este es el proceso ganador y consecuentemente el que se correra.
 			env_run(&envs[i]);
-			reduce_ticket(&envs[i]); 
 		}	
 	}
 
