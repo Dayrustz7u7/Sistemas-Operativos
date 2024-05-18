@@ -170,18 +170,20 @@ sched_yield(void)
 	        get_random(tot_tickets);  // Tenemos que hacer funcion random.
 
 	int j = 0;
+	bool is_winner = false;
 	while (j < pos){
 		counter += envs[idx_possible_winners[j]].tickets;
 
-		if (counter < winner) {
-			continue;
-		}
-
 		if (counter > winner) {
 			// Este es el proceso ganador y consecuentemente el que se correra.
-			env_run(&envs[idx_possible_winners[j]]);
-			break;
+			if (!is_winner){ //De no haber ganador lo asignamos
+				env_run(&envs[idx_possible_winners[j]]);
+				is_winner = true;
+				envs[idx_possible_winners[j]].tickets--;
+			}
 		}
+		envs[idx_possible_winners[j]].tickets++; //Todos los procesos no seleccionados ahora van a tener mas tickets (prioridad)
+		j++;
 	}
 
 	
