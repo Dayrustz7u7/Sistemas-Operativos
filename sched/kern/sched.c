@@ -138,8 +138,14 @@ sched_yield(void)
 	// Your code here - Priorities
 
 	// Obtener la cantidad de tickets.
+
+
 	int tot_tickets =
 	        get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+
+	
+	struct Env *PosiblesGanadores[NENV];
+	int cantPosiblesGanadores = 0;
 
 	if (!tot_tickets) {
 		if (curenv && curenv->env_status == ENV_RUNNING) {
@@ -162,12 +168,13 @@ sched_yield(void)
 		if (envs[i].env_status != ENV_RUNNABLE) {
 			continue;
 		}
-		if (counter < winner) {
+		/*if (counter < winner) {
 			continue;
-		}
+		}*/
 
 		if (counter > winner) {
 			// Este es el proceso ganador y consecuentemente el que se correra.
+			// 
 			env_run(&envs[i]);
 		}
 	}
