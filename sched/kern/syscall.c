@@ -1,5 +1,6 @@
 /* See COPYRIGHT for copyright information. */
 
+#include "env.h"
 #include <inc/x86.h>
 #include <inc/error.h>
 #include <inc/string.h>
@@ -429,18 +430,16 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
-// Devuelve -1 en caso de haber ingresado un env_id invalido.
-static int
+// Devuelve 0 en caso de haber ingresado un env_id invalido.
+int
 sys_get_priority(envid_t envid)
 {
-	int priority = -1;
-	for (int i = 0; i < NENV; i++) {
-		if (envs[i].env_id == envid) {
-			priority = envs[i].tickets;
-			break;
-		}
+	struct *Env search;
+	int r;
+	if ((r=envid2env(envid, &search, true))<0){
+		return 0;
 	}
-	return priority;
+	return search->tickets;
 }
 
 // Le incrementa la prioridad dandole 10 tickets extra.
@@ -448,24 +447,28 @@ sys_get_priority(envid_t envid)
 static void
 sys_increase_priority(envid_t envid)
 {
-	for (int i = 0; i < NENV; i++) {
-		if (envs[i].env_id == envid) {
-			envs[i].tickets += 10;
-			break;
-		}
+	struct *Env search;
+	int r;
+	if ((r=envid2env(envid, &search, true))<0){
+		return;
 	}
+	search->tickets+=500;
+	return;
 }
 
 // Le disminuimos la prioridad quitandole 10 tickets.
 static void
 sys_decrease_priority(envid_t envid)
 {
-	for (int i = 0; i < NENV; i++) {
-		if (envs[i].env_id == envid) {
-			envs[i].tickets -= 10;
-			break;
-		}
+	struct *Env search;
+	int r;
+	if ((r=envid2env(envid, &search, true))<0){
+		return;
 	}
+	if (search->tickets > 500){
+		search->tickets+=500;
+	}
+	return;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
