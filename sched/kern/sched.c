@@ -180,10 +180,8 @@ sched_yield(void)
 		struct Env *goat = posible_winners[real_winner];
 		if (goat->tickets > 0) {
 			goat->tickets  --; 
-			env_run(goat); 
-		} else {
-			sched_halt(); 
 		}
+		env_run(goat); 
 	} 
 
 	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
