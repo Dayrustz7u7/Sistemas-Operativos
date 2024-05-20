@@ -69,11 +69,13 @@ i386_init(void)
 #else
 	// Touch all you want.
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
+	
+	
 #endif  // TEST*
 
 	// Eliminar esta llamada una vez completada la parte 1
 	// e implementado sched_yield().
-	// env_run(&envs[0]);
+	//env_run(&envs[0]);
 
 	// Schedule and run the first user environment!
 	sched_yield();
