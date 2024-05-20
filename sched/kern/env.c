@@ -228,6 +228,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_status = ENV_RUNNABLE;
 	e->env_runs = 0;
 
+	// Asigna 100 tickets.
+	e->tickets = 100000;
+
 	// Clear out all the saved register state,
 	// to prevent the register values
 	// of a prior environment inhabiting this Env structure
@@ -505,11 +508,18 @@ env_run(struct Env *e)
 	//       4. Update its 'env_runs' counter,
 	//       5. Use env_load_pgdir() to switch to its address space.
 
-	if (curenv) {
-		if (e->env_status == ENV_RUNNING) {
-			e->env_status = ENV_RUNNABLE;
+	/// Si no hay ninguno seteo el primero
+	if (!curenv) {
+		curenv = e;
+	}
+
+	/// Si no es el mismo
+	if (curenv != e) {
+		// si esta corriendo
+		if (curenv->env_status == ENV_RUNNING) {
+			curenv->env_status = ENV_RUNNABLE;
 		}
-	} 
+	}
 
 	// Hint: This function loads the new environment's state from
 	//    e->env_tf.  Go back through the code you wrote above
