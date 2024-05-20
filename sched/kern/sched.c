@@ -9,6 +9,7 @@ void sched_halt(void);
 
 // VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
 static unsigned long next = 1;
+int stadistics[NENV];	//Cantidad de veces que corrio cada proceso.
 //---------------------------------------------------
 
 // Choose a user environment to run and run it.
@@ -19,6 +20,7 @@ check_and_run(int j)
 {
 	struct Env *env = &envs[j];
 	if (env->env_status == ENV_RUNNABLE) {
+		stadistics[j]++;
 		env_run(env);
 	}
 }
@@ -121,6 +123,7 @@ sched_yield(void)
 	}
 
 	if (curenv && curenv->env_status == ENV_RUNNING) {
+		stadistics[ENVX(curenv->env_id)]++;
 		env_run(curenv);
 	}
 
@@ -151,6 +154,7 @@ sched_yield(void)
 		if (curenv && curenv->env_status == ENV_RUNNING) {
 			if (curenv->tickets) {
 				curenv->tickets--;
+				stadistics[ENVX(curenv->env_id)]++;
 				env_run(curenv);
 			} else {
 				sched_halt();
@@ -182,6 +186,7 @@ sched_yield(void)
 			goat->tickets  --; 
 		}
 		env_run(goat); 
+		stadistics[real_winner]++;
 	} 
 
 	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
@@ -212,6 +217,11 @@ sched_halt(void)
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
+		cprintf("STATS:");
+		cprintf("There are %d processes\n",NENV);
+		for (int j = 0; j<NENV; j++){
+			cprintf("Process: %d, total times ran: %d\n", j, stadistics[j]);
+		}
 		while (1)
 			monitor(NULL);
 	}
