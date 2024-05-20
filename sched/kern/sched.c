@@ -31,17 +31,17 @@ can_run(struct Env *env)
 }
 
 /// Funcion auxiliar que retorna un int, indicando cantidad total de tickets.
-// int
-// get_tot_tickets()
-// {
-// 	int tot_tickets = 0;
-// 	for (int i = 0; i < NENV; i++) {
-// 		if (envs[i].env_status == ENV_RUNNABLE) {
-// 			tot_tickets += envs[i].tickets;
-// 		}
-// 	}
-// 	return tot_tickets;
-// }
+int
+get_tot_tickets()
+{
+	int tot_tickets = 0;
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			tot_tickets += envs[i].tickets;
+		}
+	}
+	return tot_tickets;
+}
 
 // Función srand para establecer la semilla
 void
@@ -62,7 +62,7 @@ read_cpu_timestamp()
 
 
 // Funcion auxiliar Random()
-unsigned int
+unsigned
 get_random(unsigned int total_ticks)
 {
 	// Initialize seed using CPU timestamp
@@ -78,7 +78,7 @@ get_random(unsigned int total_ticks)
 
 	// Update the seed and generate the next random number
 	seed = (a * seed + c) % m;
-	return (unsigned int) (seed % (total_ticks + 1));
+	return (unsigned int) (seed) % (total_ticks);
 }
 
 void
@@ -137,20 +137,11 @@ sched_yield(void)
 
 	// Your code here - Priorities
 
-	// Obtener la cantidad de tickets.
-	// int tot_tickets =
-	//         get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
+	unsigned int tot_tickets = get_tot_tickets();
 
-	int tot_tickets = 0;
-	int pos = 0;
-	int idx_possible_winners [NENV];
-	for (int i = 0; i < NENV; i++) {
-		if (envs[i].env_status == ENV_RUNNABLE) {
-			tot_tickets += envs[i].tickets;
-			idx_possible_winners[pos] = i;
-			pos++;
-		}
-	}
+
+	struct Env *posible_winners[NENV];
+	unsigned int cant_cand = 0;
 
 	if (!tot_tickets) {
 		if (curenv && curenv->env_status == ENV_RUNNING) {
@@ -158,7 +149,7 @@ sched_yield(void)
 				curenv->tickets--;
 				env_run(curenv);
 			} else {
-				curenv->tickets++; //Si no hay mas tickets hay que sumarle, sino queda un proceso que no corre nunca.
+				curenv->tickets++;
 				sched_halt();
 			}
 		}
@@ -166,47 +157,31 @@ sched_yield(void)
 
 	// Obtenemos el proceso a correr.
 	int counter = 0;
-	int winner =
-	        get_random(tot_tickets);  // Tenemos que hacer funcion random.
+	unsigned int winner =
+	        get_random(tot_tickets + 1);  // Tenemos que hacer funcion random.
 
-	int j = 0;
-	bool is_winner = false;
-	while (j < pos){
-		counter += envs[idx_possible_winners[j]].tickets;
+	for (int i = 0; i < NENV; i++) {
+		counter += envs[i].tickets;
+		if (envs[i].env_status != ENV_RUNNABLE) {
+			continue;
+		}
 
 		if (counter > winner) {
-			// Este es el proceso ganador y consecuentemente el que se correra.
-			if (!is_winner){ //De no haber ganador lo asignamos
-				env_run(&envs[idx_possible_winners[j]]);
-				is_winner = true;
-				envs[idx_possible_winners[j]].tickets--;
-			}
+			struct Env *winner_cand = &envs[i];
+			posible_winners[cant_cand] = winner_cand;
+			cant_cand++;
 		}
-		envs[idx_possible_winners[j]].tickets++; //Todos los procesos no seleccionados ahora van a tener mas tickets (prioridad)
-		j++;
 	}
 
-	
 
-	// for (int i = 0; i < NENV; i++) {
-	// 	counter += envs[i].tickets;
-	// 	if (envs[i].env_status != ENV_RUNNABLE) {
-	// 		continue;
-	// 	}
-	// 	if (counter < winner) {
-	// 		continue;
-	// 	}
-
-	// 	if (counter > winner) {
-	// 		// Este es el proceso ganador y consecuentemente el que se correra.
-	// 		env_run(&envs[i]);
-	// 	}
-	// }
-
-	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
-	// 	env_run(curenv);
-	// }
-
+	if (cant_cand > 0) {
+		unsigned int real_winner = get_random(cant_cand);
+		struct Env *goat = posible_winners[real_winner];
+		if (goat->tickets > 0) {
+			goat->tickets--;
+		}
+		env_run(goat);
+	}
 
 #endif
 	// sched_halt never returns
