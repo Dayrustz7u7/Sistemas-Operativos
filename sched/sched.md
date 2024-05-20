@@ -67,12 +67,15 @@ El uso de la aleatoriedad es lo que favorece la equidad (fairness) de este sched
 
 7. Si no hay tickets disponibles, entonces se revisa si el proceso actual está en estado `running` y si aún tiene tickets para ser ejecutado.
 
-
 #### Documentacion utilizada
 
 Para construir este scheduler se usa de referencia la bibliografia de la catedra:
 
 - [ARP](http://ostep.org) Scheduling: Proportional share. CAP9
+
+#### Sobre las syscalls 
+
+Las syscalls implementadas permiten aumentar o disminuir la cantidad de tickets disponibles para cada proceso. Tal como se describe en el [ARP cap 9.5](http://ostep.org), para explicar claramente cómo funciona este sistema, se depende de la asignación de tickets. En este caso, todos los procesos iniciarán con la misma cantidad de tickets para poder acceder a los recursos disponibles (CPU). A su vez, se confía en que el usuario, tal como dice el libro `know best`, hará correcto uso de las syscalls (de suma o resta de tickets) para la asignación, disminución y aumento en la cantidad de tickets disponibles para los procesos.
 
 #### Ejecucion de pruebas con automaticas del scheduler lottery 
 
