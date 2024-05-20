@@ -229,7 +229,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_runs = 0;
 
 	// Asigna 100 tickets.
-	e->tickets = 100;
+	e->tickets = 100000;
 
 	// Clear out all the saved register state,
 	// to prevent the register values
