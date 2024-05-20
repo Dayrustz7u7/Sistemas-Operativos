@@ -62,7 +62,7 @@ read_cpu_timestamp()
 
 
 // Funcion auxiliar Random()
-unsigned 
+unsigned
 get_random(unsigned int total_ticks)
 {
 	// Initialize seed using CPU timestamp
@@ -78,7 +78,7 @@ get_random(unsigned int total_ticks)
 
 	// Update the seed and generate the next random number
 	seed = (a * seed + c) % m;
-	return (unsigned int)(seed)%(total_ticks);
+	return (unsigned int) (seed) % (total_ticks);
 }
 
 void
@@ -137,13 +137,9 @@ sched_yield(void)
 
 	// Your code here - Priorities
 
-	// Obtener la cantidad de tickets.
+	unsigned int tot_tickets = get_tot_tickets();
 
 
-	unsigned int tot_tickets =
-	        get_tot_tickets();  // DEBERIAMOS VER QUE PASA SI NO HAY TICKETS??
-
-	
 	struct Env *posible_winners[NENV];
 	unsigned int cant_cand = 0;
 
@@ -153,6 +149,7 @@ sched_yield(void)
 				curenv->tickets--;
 				env_run(curenv);
 			} else {
+				curenv->tickets++;
 				sched_halt();
 			}
 		}
@@ -160,7 +157,8 @@ sched_yield(void)
 
 	// Obtenemos el proceso a correr.
 	int counter = 0;
-	unsigned int winner = get_random(tot_tickets + 1);  // Tenemos que hacer funcion random.
+	unsigned int winner =
+	        get_random(tot_tickets + 1);  // Tenemos que hacer funcion random.
 
 	for (int i = 0; i < NENV; i++) {
 		counter += envs[i].tickets;
@@ -170,24 +168,20 @@ sched_yield(void)
 
 		if (counter > winner) {
 			struct Env *winner_cand = &envs[i];
-			posible_winners[cant_cand] = winner_cand; 
-			cant_cand ++; 
+			posible_winners[cant_cand] = winner_cand;
+			cant_cand++;
 		}
 	}
 
+
 	if (cant_cand > 0) {
-		unsigned int real_winner = get_random(cant_cand); 
+		unsigned int real_winner = get_random(cant_cand);
 		struct Env *goat = posible_winners[real_winner];
 		if (goat->tickets > 0) {
-			goat->tickets  --; 
+			goat->tickets--;
 		}
-		env_run(goat); 
-	} 
-
-	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
-	// 	env_run(curenv);
-	// }
-
+		env_run(goat);
+	}
 
 #endif
 	// sched_halt never returns

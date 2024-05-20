@@ -429,6 +429,45 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+// Devuelve -1 en caso de haber ingresado un env_id invalido.
+static int
+sys_get_priority(envid_t envid)
+{
+	int priority = -1;
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_id == envid) {
+			priority = envs[i].tickets;
+			break;
+		}
+	}
+	return priority;
+}
+
+// Le incrementa la prioridad dandole 10 tickets extra.
+// Hacemos que solo le de 10 tickets para que usuario no pueda asignarle cuantos tickets quiera.
+static void
+sys_increase_priority(envid_t envid)
+{
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_id == envid) {
+			envs[i].tickets += 10;
+			break;
+		}
+	}
+}
+
+// Le disminuimos la prioridad quitandole 10 tickets.
+static void
+sys_decrease_priority(envid_t envid)
+{
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_id == envid) {
+			envs[i].tickets -= 10;
+			break;
+		}
+	}
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -464,6 +503,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_env_set_pgfault_upcall(a1, (void *) a2);
 	case SYS_yield:
 		sys_yield();  // No return
+	case SYS_get_priority:
+		sys_get_priority(a1);
+	case SYS_increase_priority:
+		sys_increase_priority(a1);
+	case SYS_decrease_priority:
+		sys_decrease_priority(a1);
 	default:
 		return -E_INVAL;
 	}
