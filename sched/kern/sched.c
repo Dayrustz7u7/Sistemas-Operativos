@@ -149,7 +149,6 @@ sched_yield(void)
 				curenv->tickets--;
 				env_run(curenv);
 			} else {
-				curenv->tickets++;
 				sched_halt();
 			}
 		}
