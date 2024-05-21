@@ -3,7 +3,6 @@
 void
 umain(int argc, char **argv)
 {
-	
 	int tickets = thisenv->tickets;
 	cprintf("My priority (Amount of tickets) is: %d\n", tickets);
 	sys_decrease_priority(thisenv->env_id);

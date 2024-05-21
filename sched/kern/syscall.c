@@ -434,9 +434,9 @@ sys_ipc_recv(void *dstva)
 int
 sys_get_priority(envid_t envid)
 {
-	struct Env* search;
+	struct Env *search;
 	int r;
-	if ((r=envid2env(envid, &search, true))<0){
+	if ((r = envid2env(envid, &search, true)) < 0) {
 		return 0;
 	}
 	return search->tickets;
@@ -447,12 +447,12 @@ sys_get_priority(envid_t envid)
 static void
 sys_increase_priority(envid_t envid)
 {
-	struct Env* search;
+	struct Env *search;
 	int r;
-	if ((r=envid2env(envid, &search, true))<0){
+	if ((r = envid2env(envid, &search, true)) < 0) {
 		return;
 	}
-	search->tickets+=500;
+	search->tickets += 500;
 	return;
 }
 
@@ -460,13 +460,13 @@ sys_increase_priority(envid_t envid)
 static void
 sys_decrease_priority(envid_t envid)
 {
-	struct Env* search;
+	struct Env *search;
 	int r;
-	if ((r=envid2env(envid, &search, true))<0){
+	if ((r = envid2env(envid, &search, true)) < 0) {
 		return;
 	}
-	if (search->tickets > 500){
-		search->tickets-=500;
+	if (search->tickets > 500) {
+		search->tickets -= 500;
 	}
 	return;
 }

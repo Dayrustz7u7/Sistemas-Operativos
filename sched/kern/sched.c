@@ -6,8 +6,8 @@
 #include <kern/monitor.h>
 
 void sched_halt(void);
-int stadistics[NENV];	//Cantidad de veces que corrio cada proceso.
-int scheduler_calls;	//Cantidad de llamadas al scheduler.
+int stadistics[NENV];  // Cantidad de veces que corrio cada proceso.
+int scheduler_calls;   // Cantidad de llamadas al scheduler.
 
 // VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
 static unsigned long next = 1;
@@ -105,7 +105,7 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
-	
+
 	int act_pos = 0;  /// i que uso tomas
 
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
@@ -190,8 +190,8 @@ sched_yield(void)
 =======
 		stadistics[real_winner]++;
 		cprintf("IMPRESION DE PRUEBA %d\n", stadistics[real_winner]);
-		env_run(goat); 
-	} 
+		env_run(goat);
+	}
 
 	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
 	// 	env_run(curenv);
@@ -222,9 +222,11 @@ sched_halt(void)
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
-		cprintf("STATS: There are %d processes\n",NENV);
-		for (int j = 0; j<NENV; j++){
-			cprintf("Process: %d, total times ran: %d\n", j, stadistics[j]);
+		cprintf("STATS: There are %d processes\n", NENV);
+		for (int j = 0; j < NENV; j++) {
+			cprintf("Process: %d, total times ran: %d\n",
+			        j,
+			        stadistics[j]);
 		}
 		cprintf("Scheduler's been called %d times\n", scheduler_calls);
 		while (1)
