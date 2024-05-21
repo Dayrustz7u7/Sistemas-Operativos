@@ -6,6 +6,8 @@
 #include <kern/monitor.h>
 
 void sched_halt(void);
+int stadistics[NENV];	//Cantidad de veces que corrio cada proceso.
+int scheduler_calls;	//Cantidad de llamadas al scheduler.
 
 // VARIABLE ESTATICA PARA LA SEMILLA - PRUEBA---------
 static unsigned long next = 1;
@@ -19,6 +21,7 @@ check_and_run(int j)
 {
 	struct Env *env = &envs[j];
 	if (env->env_status == ENV_RUNNABLE) {
+		stadistics[j]++;
 		env_run(env);
 	}
 }
@@ -84,6 +87,7 @@ get_random(unsigned int total_ticks)
 void
 sched_yield(void)
 {
+	scheduler_calls++;
 #ifdef SCHED_ROUND_ROBIN
 	// Implement simple round-robin scheduling.
 	//
@@ -101,7 +105,7 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
-
+	
 	int act_pos = 0;  /// i que uso tomas
 
 	if (curenv) {  // Primero me fijo si hay un env corriendo actualmente
@@ -121,6 +125,7 @@ sched_yield(void)
 	}
 
 	if (curenv && curenv->env_status == ENV_RUNNING) {
+		stadistics[ENVX(curenv->env_id)]++;
 		env_run(curenv);
 	}
 
@@ -139,7 +144,6 @@ sched_yield(void)
 
 	unsigned int tot_tickets = get_tot_tickets();
 
-
 	struct Env *posible_winners[NENV];
 	unsigned int cant_cand = 0;
 
@@ -147,6 +151,7 @@ sched_yield(void)
 		if (curenv && curenv->env_status == ENV_RUNNING) {
 			if (curenv->tickets) {
 				curenv->tickets--;
+				stadistics[ENVX(curenv->env_id)]++;
 				env_run(curenv);
 			} else {
 				sched_halt();
@@ -179,8 +184,20 @@ sched_yield(void)
 		if (goat->tickets > 0) {
 			goat->tickets--;
 		}
+<<<<<<< HEAD
 		env_run(goat);
 	}
+=======
+		stadistics[real_winner]++;
+		cprintf("IMPRESION DE PRUEBA %d\n", stadistics[real_winner]);
+		env_run(goat); 
+	} 
+
+	// if (curenv && curenv->env_status == ENV_RUNNABLE) {
+	// 	env_run(curenv);
+	// }
+
+>>>>>>> estadisticas
 
 #endif
 	// sched_halt never returns
@@ -205,6 +222,11 @@ sched_halt(void)
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
+		cprintf("STATS: There are %d processes\n",NENV);
+		for (int j = 0; j<NENV; j++){
+			cprintf("Process: %d, total times ran: %d\n", j, stadistics[j]);
+		}
+		cprintf("Scheduler's been called %d times\n", scheduler_calls);
 		while (1)
 			monitor(NULL);
 	}
