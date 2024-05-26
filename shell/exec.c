@@ -280,10 +280,10 @@ exec_cmd(struct cmd *cmd)
 
 		close(fd[READ]);
 		close(fd[WRITE]);
-		free(stack.ss_sp);
 		waitpid(proceso_izq, NULL, 0);
 		waitpid(proceso_der, NULL, 0);
 		free_command(parsed_pipe);
+		free(stack.ss_sp);
 		_exit(EXIT_SUCCESS);
 	}
 	}
