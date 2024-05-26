@@ -139,19 +139,20 @@ exec_cmd(struct cmd *cmd)
 	struct pipecmd *p;
 
 	switch (cmd->type) {
-	case EXEC:
+	case EXEC: {
 		e = (struct execcmd *) cmd;  //
 		set_environ_vars(e->eargv, e->eargc);
 		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
+			free_command(cmd);
+			// free(stack.ss_sp);
+			_exit(-1);
 		}
-		_exit(-1);
 		break;
-
+	}
 	case BACK: {
 		b = (struct backcmd *) cmd;
 		exec_cmd(b->c);
-		_exit(-1);
 		break;
 	}
 
