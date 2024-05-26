@@ -162,17 +162,41 @@ exec_cmd(struct cmd *cmd)
 		// Verifique si la longitud del nombre del archivo (en la
 		// estructura CMD EXEC) es mayor que cero
 		//
-		r = (struct execcmd *) cmd;
+	r = (struct execcmd *) cmd;
 
 		if (strlen(r->in_file) > 0) {
-			int fd_in = open_redir_fd(r->in_file, O_RDONLY);
-			dup2(fd_in, STDIN_FILENO);
+			int fd_in =
+			        open_redir_fd(r->in_file, O_RDONLY | O_CLOEXEC);
+
+			if (dup2(fd_in, STDIN_FILENO) ==  -1) {
+				printf_debug("failed to dup stdin \n"); 
+				_exit(EXIT_FAILURE); 
+			};
+
+			if (fd_in > 2) {
+				if (close(fd_in) == -1) {
+					printf_debug("failed closing file \n"); 
+					_exit(EXIT_FAILURE); 
+				}
+			}
+
 		}
 		if (strlen(r->out_file) > 0) {
 			int fd_out = open_redir_fd(r->out_file,
 			                           O_CREAT | O_CLOEXEC |
 			                                   O_WRONLY | O_TRUNC);
-			dup2(fd_out, STDOUT_FILENO);
+			
+			if (dup2(fd_out, STDOUT_FILENO) ==  -1) {
+				printf_debug("failed to dup stout \n"); 
+				_exit(EXIT_FAILURE); 
+			};
+
+			if (fd_out > 2) {
+				if (close(fd_out) == -1) {
+					printf_debug("failed closing file \n"); 
+					_exit(EXIT_FAILURE); 
+				}
+			}
 		}
 		if (strlen(r->err_file) > 0) {
 			if (strcmp(r->err_file, "&1") == 0) {
@@ -180,8 +204,21 @@ exec_cmd(struct cmd *cmd)
 			} else {
 				int fd_err = open_redir_fd(r->err_file,
 				                           O_TRUNC | O_WRONLY |
-				                                   O_CREAT);
-				dup2(fd_err, STDERR_FILENO);
+				                                   O_CREAT | O_CLOEXEC);
+				
+			
+			if (dup2(fd_err, STDERR_FILENO) ==  -1) {
+				printf_debug("failed to dup stderr \n"); 
+				_exit(EXIT_FAILURE); 
+			};
+
+			if (fd_err > 2) {
+				if (close(fd_err) == -1) {
+					printf_debug("failed closing file \n"); 
+					_exit(EXIT_FAILURE); 
+				}
+			}
+			
 			}
 		}
 		r->type = EXEC;
