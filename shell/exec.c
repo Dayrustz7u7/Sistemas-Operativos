@@ -3,6 +3,7 @@
 #include "freecmd.h"
 #include "types.h"
 #include "utils.h"
+#include <bits/types/stack_t.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,6 +17,8 @@
 #define ERROR_EXECV "FALLO EL LLAMADO DE EXCEV"
 #define ERROR_MALLOC_K "FALLO AL RESERVAR MEMORIA PARA CLAVE"
 #define ERROR_MALLOC_V "FALLO AL RESERVAR MEMORIA PARA VALOR"
+
+extern stack_t stack;
 // establece "clave" con la parte clave de "arg"
 // y nulo termina
 //
@@ -145,7 +148,7 @@ exec_cmd(struct cmd *cmd)
 		if (execvp(e->argv[0], e->argv) < 0) {
 			perror(ERROR_EXECV);
 			free_command(cmd);
-			// free(stack.ss_sp);
+			free(stack.ss_sp);
 			_exit(-1);
 		}
 		break;
@@ -277,7 +280,7 @@ exec_cmd(struct cmd *cmd)
 
 		close(fd[READ]);
 		close(fd[WRITE]);
-		// free(stack.ss_sp);
+		free(stack.ss_sp);
 		waitpid(proceso_izq, NULL, 0);
 		waitpid(proceso_der, NULL, 0);
 		free_command(parsed_pipe);
