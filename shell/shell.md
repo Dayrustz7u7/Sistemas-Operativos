@@ -101,6 +101,7 @@ Lo que ocurre es que se devuelve el exit code del ultimo comando ejecutado en el
 Pruebas: 
 
 ![img.png](docs/ejecucion_erronea_pipes.png) 
+![img.png](docs/cat_noexiste.png)
 
 
 ---
