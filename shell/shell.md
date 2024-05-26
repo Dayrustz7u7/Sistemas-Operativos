@@ -120,6 +120,14 @@ No es el mismo, ya que al pasarle un arreglo de variables de entorno establecido
 
 Ahora, para que el comportamiento sea de la misma manera como lo tenemos establecido, es necesario que dicho arreglo pasado al exec(3) como tercer argumento sea NULL. Esto se debe a que, según lo establecido, utilizará las del environ si se las pasa como tercer argumento, sumándole las variables del entorno establecidas por el proceso actual. Entonces, la solución sería crear un array de variables de entorno que contenga las variables del environ más las del proceso actual, y este mismo arreglo pasarlo a la función exec(3).
 
+
+##### Correccion 
+
+Se debe setear despues del fork para que sean visibles unicamente para el programa que se va a ejecutar y no al proceso de la shell, es decir, se quieren disponibles solamente en el proceso donde se ejecutara el binario correspondiente.  
+
+
+
+
 ---
 
 ### Pseudo-variables
@@ -169,8 +177,6 @@ El uso de señales para el manejo de procesos en segundo plano cuando finalizan 
 
 Notificación de terminación: Cuando un proceso en segundo plano finaliza, la shell necesita ser notificada para que pueda actualizar su estado y mostrar el resultado al usuario.
 
-Evitar bloqueos: Sin señales, la shell podría bloquearse esperando a que un proceso en segundo plano finalice, lo que impediría al usuario continuar interactuando con ella.
-
 Recuperación de recursos: Al finalizar un proceso en segundo plano, es posible que se liberen recursos que estaban siendo utilizados por ese proceso. La shell necesita saber cuándo esto sucede para poder limpiar y liberar esos recursos adecuadamente.
 
 En resumen, el uso de señales permite a la shell detectar y responder de manera adecuada cuando los procesos en segundo plano finalizan, lo que garantiza un comportamiento más robusto y una mejor experiencia de usuario.
@@ -184,3 +190,13 @@ El mecanismo del manejo de procesos en segundo plano es el siguiente:
 - Para el manejo de procesos en segundo plano, se deben setear una función, también conocida como handler, para manejar las signals deseadas. En este caso, el handler se activa automáticamente cuando la signal SIGCHLD se activa. En este caso, sigaction setea a qué signal se desea responder y con qué función se hace.
 - Como la shell lanza más de un proceso hijo, es conveniente separarlos en dos grupos. Con la ayuda de setpgid(2) y getppid(2), se setea que los procesos que no van a ser ejecutados en segundo plano tengan el mismo gpid que su padre, así se evita la activación de SIGCHLD y que no se imprima por pantalla otros procesos que se lanzan adicionales (por ejemplo, los que se lanzarían dentro de un comando pipe).
 ---
+
+
+## Anexos
+
+Agrego anexos con ejecuciones de varios comandos pipes y procesos en segundo plano para demostrar la correccion de dichos puntos:
+
+![](docs/segundo_plano_avanzado.png)
+
+![](docs/varios_pipes.png)
+![](docs/varios_pipes2.png)
