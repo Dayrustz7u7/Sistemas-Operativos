@@ -83,6 +83,14 @@ $ cat noexiste | grep "padron"
 cat: standard output: Bad file descriptor
 grep: (standard input): Bad file descriptor
 
+##### Correccion 
+
+Lo que ocurre es que se devuelve el exit code del ultimo comando ejecutado en el pipe. Ocurre que cuando falla uno de los comandos intermedios en una cadena de pipes el resto suele fallar tambien porque la entrada que llega no es lo esperado 
+
+Pruebas: 
+
+![img.png](docs/ejecucion_erronea_pipes.png) 
+
 
 ---
 
