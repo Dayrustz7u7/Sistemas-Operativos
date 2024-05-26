@@ -12,6 +12,17 @@ Entorno del nuevo proceso a ejecutar: El "entorno" se refiere a las variables de
 Con execve(2), tenemos un control completo sobre los argumentos y el entorno del nuevo programa que se va a ejecutar. Esto nos permite proporcionar argumentos y un entorno personalizados según las necesidades de la aplicación.
 El entorno para estas funciones (funciones exec(3)) es el mismo que el del proceso que las llama. No podemos modificar el entorno directamente antes de invocar una de estas funciones.
 
+##### Correcion 
+
+execve(2) es una syscall que permite la ejecucion de un programa que se le pasa por parametro. Reemplaza el proceso sobre por uno con nuevo: Data segment, stack y heap los cuales no se encuentran inicializados. Por otro lado la familia de wrappers le agregan funcionalidades a la misma:
+
+- v: Recibe un vector para especificar argumentos, al final se le asigna null
+- l: Toma argumentos como lista de longitud variable
+- e: Recibe un argumento adicional para proporcionar el entorno del nuevo programa, en caso de no especificar se queda con el actual
+- p: busca la variable de entorno PATH para encontrar el programa
+
+Llamar a exec(3) puede fallar con los mismos errorres qeue execve(2) (y sus wrappers). En caso de fallar, devuelve -1 y establece en errono en el codigo de error correspondiente 
+
 #### ¿Puede la llamada a exec(3) fallar? ¿Cómo se comporta la implementación de la shell en ese caso?
 
 Sí, la llamada a exec(3) puede fallar por varias razones, como por ejemplo si el archivo ejecutable especificado no existe, si no tiene permisos de ejecución, si el número máximo de archivos abiertos se ha alcanzado, etc.
