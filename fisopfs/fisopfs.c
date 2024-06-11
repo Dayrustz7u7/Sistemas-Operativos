@@ -47,7 +47,8 @@ struct datablock {
 struct inode {
 	int inum;								// Low level file name.
 	int type;								// Type of file (File | Directory).
-	char name[NAME_SIZE];					// Name of the file (Inluding path).
+	int blck_bitmap[BLOCKS_PER_INODE];		// Position of blocks in datablock bitmap.
+	char name[NAME_SIZE];					// Name of the file (Including path).
 	mode_t mode;							// Wether this file can be read/ written/ executed.
 	uid_t owner;							// Who owns this file (User id).
 	gid_t group;							// Group id.
@@ -59,6 +60,7 @@ struct inode {
 	nlink_t links_count;					// How many hard links are there on this file.
 	blkcnt_t blocks;						// How many blocks have been allocated to this file.
 	struct datablock *blockptr[DISK_PTRS];	// Set of disk pointers (15 total).
+	// AGREGAR DIRECCIONES DE LOS BLOQUES PARA LIBERARLOS DEL DBITMAP.
 };
 
 struct superblock{
@@ -156,6 +158,7 @@ int initialize_inode(const char *path, int type, mode_t mode){
 
 	current_inode.inum = position;
 	current_inode.type = type;
+	current_inode.blck_bitmap[0] = first_block;
 	strcpy(current_inode.name, path);
 	current_inode.mode = mode;
 	current_inode.owner = getuid();
@@ -183,15 +186,56 @@ int get_total_dentries(const char *path){
 }
 
 
-// Indica si un archivo esta dentro de un directorio (Comparando sus paths).
+// Obtiene la posicion dentro del path, a partir de la cual empieza el 
+// nombre del archivo o directorio. 
+// Devuelve -1 si es que no tiene.
+int get_name_offset(const char *path){
+	int position = -1;
+	for (int i = 0; i < strlen(path); i++){
+		if (path[i] == '/'){
+			position = i+1; 	// Posicion de la primera letra del nombre.
+		}
+	}
+	return position;
+}
+
+
+// A partir de la posicion del inodo en el bitmap, borra y limpia el inodo.
+void delete_inode(int i_pos){
+	ibitmap[i_pos] = FREE;
+	for (int i = 0; i < BLOCKS_PER_INODE; i++){
+		if (inodes[i_pos].blockptr[i] == NULL){
+			continue;
+		}
+		memset(inodes[i_pos].blockptr[i], NULL, sizeof(struct datablock));
+		dbitmap[inodes[i_pos].blck_bitmap[i]] = FREE;
+	}
+	memset(&inodes[i_pos], NULL, sizeof(struct inode));
+}
+
+
+// Indica mediante el path (de un directorio o archivo) si el mismo pertenece 
+// al directorio cuyo path es "dir_path".
 // Retorna -1 en caso de que no este, 1 si esta.
-int file_in_dir(const char *file_path, const char *dir_path){
-	if (!(strlen(file_path)>strlen(dir_path) && strlen(dir_path)>0)){
+int in_dir(const char *path, const char *dir_path){
+	if (!(strlen(path)>strlen(dir_path) && strlen(dir_path)>0)){
 		return -1;
 	}
-	if (strncmp(dir_path, file_path, strlen(dir_path))==0){
+
+	// Directory path should have one less dentry.
+	// Unless its in root.
+	int dir_dentries = get_total_dentries(dir_path);
+	int path_dentries = get_total_dentries(path);
+	if ((dir_dentries+1) != path_dentries){ 				// Only case condition isn't valid, yet path belongs to dir_path is root.
+		if ((dir_dentries != 1) && (path_dentries != 1)){ 	// If both have only one "/", then its root.
+			return -1;
+		}
+	}
+
+	if (strncmp(dir_path, path, strlen(dir_path))==0){
 		return 1;
 	}
+
 	return -1;
 }
 
@@ -228,13 +272,12 @@ fisopfs_unlink(const char *path){
 	if (inodes[position].type==TYPE_DIRECTORY){
 		return -1;
 	}
-	ibitmap[position] = FREE;
 	inodes[position].links_count--;
 
 	if (inodes[position].links_count==0){
-		//FUNCION PARA BORRAR LOS INODOS (AL NO HABER MAS LINKS_COUNT)
+		delete_inode(position);
 	}
-	
+
 	return 0;
 }
 
@@ -267,19 +310,32 @@ fisopfs_readdir(const char *path,
                 off_t offset,
                 struct fuse_file_info *fi)
 {
-	printf("[debug] fisopfs_readdir - path: %s\n", path);
-
 	// Los directorios '.' y '..'
 	filler(buffer, ".", NULL, 0);
 	filler(buffer, "..", NULL, 0);
 
-	// Si nos preguntan por el directorio raiz, solo tenemos un archivo
-	if (strcmp(path, "/") == 0) {
-		filler(buffer, "fisop", NULL, 0);
-		return 0;
+	int position = get_inode(path);
+	if (position == -1){
+		return -1;
+	}
+	struct inode directory = inodes[position];
+	if (directory.type != TYPE_DIRECTORY){
+		return -1;
 	}
 
-	return -ENOENT;
+	directory.atime = time (NULL);
+
+	for (int i = 0; i < TOTAL_INODES; i++){
+		if (ibitmap[i]==FREE){
+			continue;
+		}
+		if (in_dir(inodes[i].name, directory.name)==-1){
+			continue;
+		}
+		int name_position = get_name_offset(inodes[i].name);
+		filler(buffer, inodes[i].name + name_position, NULL, 0);		
+	}
+	return 0;
 }
 
 #define MAX_CONTENIDO 100
