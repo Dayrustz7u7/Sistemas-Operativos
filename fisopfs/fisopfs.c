@@ -100,9 +100,11 @@ int get_inode(const char *path){
 
 
 // Obtiene la posicion del primer bloque libre.
+// Omitimos la posicion 0, pues si una posicion en el blck_bitmap 
+// del inodo es 0 significa que esta vacio.
 // Devuelve -1 de no haber ningun bloque libre.
 int get_free_block(){
-	for (int i = 0; i < TOTAL_DATABLOCKS; i++){
+	for (int i = 1; i < TOTAL_DATABLOCKS; i++){
 		if (dbitmap[i] == FREE){
 			return i;
 		}
@@ -349,8 +351,7 @@ fisopfs_readdir(const char *path,
 	return 0;
 }
 
-#define MAX_CONTENIDO 100
-static char fisop_file_contenidos[MAX_CONTENIDO] = "hola fisopfs!\n";
+
 
 static int
 fisopfs_read(const char *path,
@@ -377,6 +378,8 @@ fisopfs_read(const char *path,
 		size = (inodes[inode_idx].blocks*BLOCK_SIZE - offset);
 	}
 
+	inodes[inode_idx].atime = time(NULL);
+
 	while (size != 0){
 		int current_block = offset/BLOCK_SIZE;
 		if (inodes[inode_idx].blck_bitmap[current_block]==FREE){
@@ -393,11 +396,83 @@ fisopfs_read(const char *path,
 }
 
 
+/*
+ * path 	-> Ruta del archivo a escribir
+ * buffer	-> Mensaje a escribir
+ * size		-> Tamanio del mensaje a escribir
+*/
+static int
+fisopfs_write(const char *path,
+              const char *buffer,
+              size_t size,
+              off_t offset,
+              struct fuse_file_info *fi)
+{	
+	int max_size = BLOCKS_PER_INODE*BLOCK_SIZE;
+	int size_after_writing = size + offset;
+	if (size_after_writing > max_size){
+		return -1;
+	}
+	int inode_idx = get_inode(path);
+
+	
+	if (inode_idx == -1){
+		// Si el archivo no existe, lo creamos.
+		int initialization = initialize_inode(path, TYPE_FILE, 0644);
+		if (initialization == -1){
+			return -1;
+		}
+		inode_idx = get_inode(path);
+		if (inode_idx == -1){
+			return -1;
+		}
+	}
+	if (inodes[inode_idx].type == TYPE_DIRECTORY){
+		return -1;
+	}
+
+	inodes[inode_idx].size = (max_size > size_after_writing) ? size_after_writing : max_size;
+	inodes[inode_idx].atime = time(NULL);
+	inodes[inode_idx].mtime = time(NULL);
+	
+	// Modifico el tamanio de size a lo que realmente vamos a escribir.
+	if (size_after_writing > max_size){
+		// Obtengo "lo que sobra" del mensaje, lo que no se puede escribir.
+		int unwritable = size_after_writing - max_size;
+		size = size - unwritable;
+	}
+
+	// Cualquiera de las dos condiciones las considero validas.
+	int buffer_offset = 0;
+	while (offset < inodes[inode_idx].size || size != 0){
+		int current_block = offset/BLOCK_SIZE;
+		if (inodes[inode_idx].blck_bitmap[current_block] == FREE){
+			// Si el datablock esta lleno, reservo uno nuevo.
+			int new_dblock = add_block(inode_idx);
+			if (new_dblock == -1){
+				return -1;
+			}
+		} else {
+			int offset_in_block = offset % BLOCK_SIZE;
+			int size_available = BLOCK_SIZE - offset_in_block;
+			int bytes_to_write = (size > size_available) ? size_available : size;
+			memcpy(inodes[inode_idx].blockptr[current_block]->data + offset_in_block, buffer + buffer_offset, bytes_to_write);
+			buffer_offset = buffer_offset + bytes_to_write;
+			size = size - bytes_to_write;
+		}
+	}
+	// Retorna la cantidad de bytes, del buffer, escritas.
+	return buffer_offset;
+}
+
+
+
+
 static struct fuse_operations operations = {
 	.getattr = fisopfs_getattr,
 	.readdir = fisopfs_readdir,
 	.read = fisopfs_read,
-
+	.write = fisopfs_write,
 	.mkdir = fisopfs_mkdir,
 	//.rmdir = fisopfs_rmdir,
 	.unlink = fisopfs_unlink,
