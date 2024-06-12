@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <time.h>
 #define FUSE_USE_VERSION 30
 #define BLOCK_SIZE 4096
@@ -60,7 +61,6 @@ struct inode {
 	nlink_t links_count;					// How many hard links are there on this file.
 	blkcnt_t blocks;						// How many blocks have been allocated to this file.
 	struct datablock *blockptr[DISK_PTRS];	// Set of disk pointers (15 total).
-	// AGREGAR DIRECCIONES DE LOS BLOQUES PARA LIBERARLOS DEL DBITMAP.
 };
 
 struct superblock{
@@ -285,19 +285,30 @@ fisopfs_unlink(const char *path){
 static int
 fisopfs_getattr(const char *path, struct stat *st)
 {
-	printf("[debug] fisopfs_getattr - path: %s\n", path);
+	int inode_idx = get_inode(path);
 
-	if (strcmp(path, "/") == 0) {
-		st->st_uid = 1717;
-		st->st_mode = __S_IFDIR | 0755;
-		st->st_nlink = 2;
-	} else if (strcmp(path, "/fisop") == 0) {
-		st->st_uid = 1818;
-		st->st_mode = __S_IFREG | 0644;
-		st->st_size = 2048;
-		st->st_nlink = 1;
-	} else {
+	if (inode_idx == -1) {
 		return -ENOENT;
+	}
+	struct inode inode = inodes[inode_idx];
+	st->st_dev = 0;
+	st->st_ino = inode_idx;
+	st->st_uid = inode.owner;
+	st->st_mode = inode.mode;
+	st->st_atime = inode.atime;
+	st->st_mtime = inode.mtime;
+	st->st_ctime = inode.ctime;
+	st->st_size = inode.size;
+	st->st_gid = inode.group;
+	st->st_blksize = BLOCK_SIZE;
+	st->st_blocks = inode.blocks;
+
+	if (inode.type == TYPE_FILE) {
+		st->st_nlink = 1;
+		st->st_mode = __S_IFREG | 0644;
+	} else {
+		st->st_nlink = 2;
+		st->st_mode = __S_IFDIR | 0755;
 	}
 
 	return 0;
@@ -348,23 +359,37 @@ fisopfs_read(const char *path,
              off_t offset,
              struct fuse_file_info *fi)
 {
-	printf("[debug] fisopfs_read - path: %s, offset: %lu, size: %lu\n",
-	       path,
-	       offset,
-	       size);
+	if (offset < 0 || size < 0){
+		return -1;
+	}
 
-	// Solo tenemos un archivo hardcodeado!
-	if (strcmp(path, "/fisop") != 0)
-		return -ENOENT;
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+	if (inodes[inode_idx].type == DIRECTORY){
+		return -1;
+	}
+	if (offset > inodes[inode_idx].blocks*BLOCK_SIZE){
+		return -1;
+	}
+	if (offset+size > inodes[inode_idx].blocks*BLOCK_SIZE){
+		size = (inodes[inode_idx].blocks*BLOCK_SIZE - offset);
+	}
 
-	if (offset + size > strlen(fisop_file_contenidos))
-		size = strlen(fisop_file_contenidos) - offset;
-
-	size = size > 0 ? size : 0;
-
-	memcpy(buffer, fisop_file_contenidos + offset, size);
-
-	return size;
+	while (size != 0){
+		int current_block = offset/BLOCK_SIZE;
+		if (inodes[inode_idx].blck_bitmap[current_block]==FREE){
+			return -1;
+		}
+		int offset_in_block = offset % BLOCK_SIZE;
+		int in_block_to_read = BLOCK_SIZE-offset_in_block;
+		int read = (size < in_block_to_read) ? size : in_block_to_read;
+		memcpy(buffer, inodes[inode_idx].blockptr[current_block]->data + offset_in_block, read);
+		size = size - read;
+		offset = offset + read;
+	}
+	return 0;
 }
 
 
@@ -374,7 +399,7 @@ static struct fuse_operations operations = {
 	.read = fisopfs_read,
 
 	.mkdir = fisopfs_mkdir,
-	.rmdir = fisopfs_rmdir,
+	//.rmdir = fisopfs_rmdir,
 	.unlink = fisopfs_unlink,
 };
 
