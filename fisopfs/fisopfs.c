@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <fuse/fuse.h>
 #include <time.h>
 #define FUSE_USE_VERSION 30
 #define BLOCK_SIZE 4096
@@ -465,17 +466,103 @@ fisopfs_write(const char *path,
 	return buffer_offset;
 }
 
+static int
+fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
+	return initialize_inode(path, TYPE_FILE, mode);
+}
 
 
+void 
+filesystem_persistence(const char *file_name)
+{
+	FILE *file;
+	file = fopen(file_name, "wb");
+	if (!file){
+		return;
+	}
+	// Debemos guardar el Superbloque, bitmap de datablocks,
+	// bitmap de inodos, inodos y datablocks en el archivo.
+	fwrite(&superblock, sizeof(struct superblock), 1, file);
+	fwrite(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file);
+	fwrite(ibitmap, sizeof(int), TOTAL_INODES, file);
+	fwrite(inodes, sizeof(struct inode), TOTAL_INODES, file);
+	fwrite(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file);	
+	fclose(file);
+}
+
+
+void
+initialize_filesystem()
+{
+	superblock.dblocks 	= 	TOTAL_DATABLOCKS;
+	superblock.dbitmap 	= 	dbitmap;
+	superblock.inodes 	= 	TOTAL_INODES;
+	superblock.ibitmap 	= 	ibitmap;
+	filesystem_persistence("fs.fisopfs");
+}
+
+
+static int
+deserialize_file(FILE *file_name){
+
+	int result;
+	result = fread(&superblock, sizeof(struct superblock), 1, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(ibitmap, sizeof(int), TOTAL_INODES, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(inodes, sizeof(struct inode), TOTAL_INODES, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
+	if (result < 0)
+		return -1;
+	superblock.ibitmap = ibitmap;
+	superblock.dbitmap = dbitmap;
+	return 0;
+}
+
+
+static void *
+fisopfs_init(struct fuse_conn_info *conn_info){
+	FILE *file = fopen("fs.fisopfs", "rb");
+	if (!file){
+		initialize_filesystem();
+
+	} else {
+		int deserialize = deserialize_file(file);
+		if (deserialize == -1){
+			return NULL;
+		}
+		fclose(file);
+	}
+	return NULL;
+}
+
+
+static void *
+fisopfs_destroy(){
+	filesystem_persistence("fs.fisopfs");
+}
 
 static struct fuse_operations operations = {
+	.init = fisopfs_init,        
+	.destroy = fisopfs_destroy,  
 	.getattr = fisopfs_getattr,
 	.readdir = fisopfs_readdir,
+	.mkdir = fisopfs_mkdir,
+	.unlink = fisopfs_unlink,
+	//.rmdir = fisopfs_rmdir,
+	//.truncate = fisopfs_truncate,
+	//.utimens = fisopfs_utimens,
+	.create = fisopfs_create,
 	.read = fisopfs_read,
 	.write = fisopfs_write,
-	.mkdir = fisopfs_mkdir,
-	//.rmdir = fisopfs_rmdir,
-	.unlink = fisopfs_unlink,
+	//.flush = fisopfs_flush,
 };
 
 int
