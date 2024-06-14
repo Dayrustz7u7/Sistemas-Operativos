@@ -71,8 +71,11 @@ struct superblock{
 	int *dbitmap;							// Pointer to data bitmap start.
 };
 
+
 /*
- * ----- Inicializacion -----
+ *****************************
+ * ----- Inicializacion -----*
+ *****************************
 */
 
 struct superblock superblock;
@@ -243,7 +246,6 @@ int in_dir(const char *path, const char *dir_path){
 }
 
 
-
 // Le agrega un bloque a un inodo, agregando un puntero al mismo
 // en la primer posicion libre dentro del inodo.
 // Devuelve 1 en caso de poder llevarse a cabo, -1 en caso contrario.
@@ -259,32 +261,97 @@ int add_block(int idx_inode){
 }
 
 
-// Creamos un directorio.
-static int fisopfs_mkdir(const char *path, mode_t mode){
-	return initialize_inode(path, TYPE_DIRECTORY, mode);
+// Realiza la persistencia del filesystem, escribiendo sobre un archivo.
+void 
+filesystem_persistence(const char *file_name)
+{
+	FILE *file;
+	file = fopen(file_name, "wb");
+	if (!file){
+		return;
+	}
+	// Debemos guardar el Superbloque, bitmap de datablocks,
+	// bitmap de inodos, inodos y datablocks en el archivo.
+	fwrite(&superblock, sizeof(struct superblock), 1, file);
+	fwrite(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file);
+	fwrite(ibitmap, sizeof(int), TOTAL_INODES, file);
+	fwrite(inodes, sizeof(struct inode), TOTAL_INODES, file);
+	fwrite(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file);	
+	fclose(file);
 }
 
 
-// Hacemos unlink.
+// Inicializa el filesystem.
+void
+initialize_filesystem()
+{
+	superblock.dblocks 	= 	TOTAL_DATABLOCKS;
+	superblock.dbitmap 	= 	dbitmap;
+	superblock.inodes 	= 	TOTAL_INODES;
+	superblock.ibitmap 	= 	ibitmap;
+	filesystem_persistence("fs.fisopfs");
+}
+
+
+// Deserializa el filesystem, lo lee del archivo donde se guardo.
 static int
-fisopfs_unlink(const char *path){
-	int position = get_inode(path);
-	if (position==-1){
-		return -1;
-	}
-	if (inodes[position].type==TYPE_DIRECTORY){
-		return -1;
-	}
-	inodes[position].links_count--;
+deserialize_file(FILE *file_name){
 
-	if (inodes[position].links_count==0){
-		delete_inode(position);
-	}
-
+	int result;
+	result = fread(&superblock, sizeof(struct superblock), 1, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(ibitmap, sizeof(int), TOTAL_INODES, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(inodes, sizeof(struct inode), TOTAL_INODES, file_name);
+	if (result < 0)
+		return -1;
+	result = fread(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
+	if (result < 0)
+		return -1;
+	superblock.ibitmap = ibitmap;
+	superblock.dbitmap = dbitmap;
 	return 0;
 }
 
 
+
+/*
+ ********************************************
+ *				FUSE OPERATIONS				*
+ ********************************************
+*/
+
+// Inicializa el filesystem.
+static void *
+fisopfs_init(struct fuse_conn_info *conn_info){
+	FILE *file = fopen("fs.fisopfs", "rb");
+	if (!file){
+		initialize_filesystem();
+
+	} else {
+		int deserialize = deserialize_file(file);
+		if (deserialize == -1){
+			return NULL;
+		}
+		fclose(file);
+	}
+	return NULL;
+}
+
+
+// Hace persistencia sobre el filesystem, lo guarda en un archivo.
+static void *
+fisopfs_destroy(){
+	filesystem_persistence("fs.fisopfs");
+}
+
+
+// Obtiene los atributos relacionados a un inodo (status)
 static int
 fisopfs_getattr(const char *path, struct stat *st)
 {
@@ -317,6 +384,8 @@ fisopfs_getattr(const char *path, struct stat *st)
 	return 0;
 }
 
+
+// Muestra todos el contenido de un directorio (ls)
 static int
 fisopfs_readdir(const char *path,
                 void *buffer,
@@ -353,7 +422,138 @@ fisopfs_readdir(const char *path,
 }
 
 
+// Creamos un directorio.
+static int fisopfs_mkdir(const char *path, mode_t mode){
+	return initialize_inode(path, TYPE_DIRECTORY, mode);
+}
 
+
+// Hace unlink sobre un inodo.
+static int
+fisopfs_unlink(const char *path){
+	int position = get_inode(path);
+	if (position==-1){
+		return -1;
+	}
+	if (inodes[position].type==TYPE_DIRECTORY){
+		return -1;
+	}
+	inodes[position].links_count--;
+
+	if (inodes[position].links_count==0){
+		delete_inode(position);
+	}
+
+	return 0;
+}
+
+
+// Remueve un directorio y todo su contenido.
+static int
+fisopfs_rmdir(const char *path)
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+
+	if (inodes[inode_idx].type == TYPE_FILE){
+		return -1;
+	}
+
+	for (int i = 0; i < TOTAL_INODES; i++){
+		if (ibitmap[i] == FREE){
+			// Inodo libre.
+			continue;
+		}
+		if (in_dir(inodes[i].name, path) == -1){
+			// Inodo que no pertenece al directorio a borrar.
+			continue;
+		}
+		if (inodes[i].type == TYPE_FILE){
+			fisopfs_unlink(inodes[i].name);
+		} else if (inodes[i].type == TYPE_DIRECTORY) {
+			fisopfs_rmdir(inodes[i].name);
+		} else {
+			continue;
+		}
+	}
+
+	
+	for (int i = 0; i < inodes[inode_idx].blocks; i++){
+		if (inodes[inode_idx].blck_bitmap[i] == FREE){
+			continue;
+		}
+		memset(inodes[inode_idx].blockptr[i], NULL, sizeof(struct datablock));
+		dbitmap[inodes[inode_idx].blck_bitmap[i]] = FREE;
+	}
+	memset(&inodes[inode_idx], NULL, sizeof(struct inode));
+	ibitmap[inode_idx] = FREE;
+	return 0;
+}
+
+
+// Truncado de archivos, para reducir su tamanio.
+static int
+fisopfs_truncate(const char *path, off_t offset)
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+	// Del bloque actual en adlente tengo que borrar todo.
+	int current_block = offset/BLOCK_SIZE;
+	int offset_in_block = offset % BLOCK_SIZE;
+	memset(&inodes[inode_idx].blockptr[current_block]->data[offset_in_block], 0, (BLOCK_SIZE - offset_in_block) * sizeof(char));
+	inodes[inode_idx].size = inodes[inode_idx].size - (BLOCK_SIZE - offset_in_block);
+	current_block ++;
+
+	for (int i = current_block; i < BLOCKS_PER_INODE; i++){
+		if (inodes[inode_idx].blck_bitmap[i] == FREE){
+			continue;
+		}
+		memset(inodes[inode_idx].blockptr[i], 0, sizeof(struct datablock));
+		int blck_idx = inodes[inode_idx].blck_bitmap[i];
+		dbitmap[blck_idx] = FREE;
+		inodes[inode_idx].blck_bitmap[i] = FREE;
+		inodes[inode_idx].size = inodes[inode_idx].size - BLOCK_SIZE;
+	}
+	return 0;
+}
+
+
+// Modifica fecha de ultimo acceso y ultima modificacion del archivo.
+static int
+fisopfs_utimens(const char *path, const struct timespec time[2])
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+	if (time == NULL) {
+		errno = EACCES;
+		return -EACCES;
+	}
+	inodes[inode_idx].atime = time[0].tv_sec;
+	inodes[inode_idx].mtime = time[1].tv_sec;
+	return 0;
+}
+
+
+// Crea un archivo
+static int
+fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
+	return initialize_inode(path, TYPE_FILE, mode);
+}
+
+
+/*
+ * Lee de un archivo
+ * path 	-> Ruta del archivo a leer
+ * buffer	-> Contenedor donde se guardara lo leido
+ * size		-> Tamanio a leer
+ * offset	-> Posicion en la cual se leera.
+*/
 static int
 fisopfs_read(const char *path,
              char *buffer,
@@ -398,9 +598,11 @@ fisopfs_read(const char *path,
 
 
 /*
+ * Escribe en un archivo, de no existir lo crea.
  * path 	-> Ruta del archivo a escribir
  * buffer	-> Mensaje a escribir
  * size		-> Tamanio del mensaje a escribir
+ * offset	-> Posicion del archivo en la que se esta escribiendo
 */
 static int
 fisopfs_write(const char *path,
@@ -466,176 +668,6 @@ fisopfs_write(const char *path,
 	return buffer_offset;
 }
 
-static int
-fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
-	return initialize_inode(path, TYPE_FILE, mode);
-}
-
-
-void 
-filesystem_persistence(const char *file_name)
-{
-	FILE *file;
-	file = fopen(file_name, "wb");
-	if (!file){
-		return;
-	}
-	// Debemos guardar el Superbloque, bitmap de datablocks,
-	// bitmap de inodos, inodos y datablocks en el archivo.
-	fwrite(&superblock, sizeof(struct superblock), 1, file);
-	fwrite(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file);
-	fwrite(ibitmap, sizeof(int), TOTAL_INODES, file);
-	fwrite(inodes, sizeof(struct inode), TOTAL_INODES, file);
-	fwrite(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file);	
-	fclose(file);
-}
-
-
-void
-initialize_filesystem()
-{
-	superblock.dblocks 	= 	TOTAL_DATABLOCKS;
-	superblock.dbitmap 	= 	dbitmap;
-	superblock.inodes 	= 	TOTAL_INODES;
-	superblock.ibitmap 	= 	ibitmap;
-	filesystem_persistence("fs.fisopfs");
-}
-
-
-static int
-deserialize_file(FILE *file_name){
-
-	int result;
-	result = fread(&superblock, sizeof(struct superblock), 1, file_name);
-	if (result < 0)
-		return -1;
-	result = fread(ibitmap, sizeof(int), TOTAL_INODES, file_name);
-	if (result < 0)
-		return -1;
-	result = fread(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
-	if (result < 0)
-		return -1;
-	result = fread(inodes, sizeof(struct inode), TOTAL_INODES, file_name);
-	if (result < 0)
-		return -1;
-	result = fread(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
-	if (result < 0)
-		return -1;
-	superblock.ibitmap = ibitmap;
-	superblock.dbitmap = dbitmap;
-	return 0;
-}
-
-
-static void *
-fisopfs_init(struct fuse_conn_info *conn_info){
-	FILE *file = fopen("fs.fisopfs", "rb");
-	if (!file){
-		initialize_filesystem();
-
-	} else {
-		int deserialize = deserialize_file(file);
-		if (deserialize == -1){
-			return NULL;
-		}
-		fclose(file);
-	}
-	return NULL;
-}
-
-
-static void *
-fisopfs_destroy(){
-	filesystem_persistence("fs.fisopfs");
-}
-
-static int
-fisopfs_rmdir(const char *path)
-{
-	int inode_idx = get_inode(path);
-	if (inode_idx == -1){
-		return -1;
-	}
-
-	if (inodes[inode_idx].type == TYPE_FILE){
-		return -1;
-	}
-
-	for (int i = 0; i < TOTAL_INODES; i++){
-		if (ibitmap[i] == FREE){
-			// Inodo libre.
-			continue;
-		}
-		if (in_dir(inodes[i].name, path) == -1){
-			// Inodo que no pertenece al directorio a borrar.
-			continue;
-		}
-		if (inodes[i].type == TYPE_FILE){
-			fisopfs_unlink(inodes[i].name);
-		} else if (inodes[i].type == TYPE_DIRECTORY) {
-			fisopfs_rmdir(inodes[i].name);
-		} else {
-			continue;
-		}
-	}
-
-	
-	for (int i = 0; i < inodes[inode_idx].blocks; i++){
-		if (inodes[inode_idx].blck_bitmap[i] == FREE){
-			continue;
-		}
-		memset(inodes[inode_idx].blockptr[i], NULL, sizeof(struct datablock));
-		dbitmap[inodes[inode_idx].blck_bitmap[i]] = FREE;
-	}
-	memset(&inodes[inode_idx], NULL, sizeof(struct inode));
-	ibitmap[inode_idx] = FREE;
-	return 0;
-}
-
-
-static int
-fisopfs_truncate(const char *path, off_t offset)
-{
-	int inode_idx = get_inode(path);
-	if (inode_idx == -1){
-		return -1;
-	}
-	// Del bloque actual en adlente tengo que borrar todo.
-	int current_block = offset/BLOCK_SIZE;
-	int offset_in_block = offset % BLOCK_SIZE;
-	memset(&inodes[inode_idx].blockptr[current_block]->data[offset_in_block], 0, (BLOCK_SIZE - offset_in_block) * sizeof(char));
-	inodes[inode_idx].size = inodes[inode_idx].size - (BLOCK_SIZE - offset_in_block);
-	current_block ++;
-
-	for (int i = current_block; i < BLOCKS_PER_INODE; i++){
-		if (inodes[inode_idx].blck_bitmap[i] == FREE){
-			continue;
-		}
-		memset(inodes[inode_idx].blockptr[i], 0, sizeof(struct datablock));
-		int blck_idx = inodes[inode_idx].blck_bitmap[i];
-		dbitmap[blck_idx] = FREE;
-		inodes[inode_idx].blck_bitmap[i] = FREE;
-		inodes[inode_idx].size = inodes[inode_idx].size - BLOCK_SIZE;
-	}
-	return 0;
-}
-
-
-static int
-fisopfs_utimens(const char *path, const struct timespec time[2])
-{
-	int inode_idx = get_inode(path);
-	if (inode_idx == -1){
-		return -1;
-	}
-	if (time == NULL) {
-		errno = EACCES;
-		return -EACCES;
-	}
-	inodes[inode_idx].atime = time[0].tv_sec;
-	inodes[inode_idx].mtime = time[1].tv_sec;
-	return 0;
-}
 
 
 static int
