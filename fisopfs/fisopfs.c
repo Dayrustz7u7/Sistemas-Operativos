@@ -549,6 +549,103 @@ fisopfs_destroy(){
 	filesystem_persistence("fs.fisopfs");
 }
 
+static int
+fisopfs_rmdir(const char *path)
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+
+	if (inodes[inode_idx].type == TYPE_FILE){
+		return -1;
+	}
+
+	for (int i = 0; i < TOTAL_INODES; i++){
+		if (ibitmap[i] == FREE){
+			// Inodo libre.
+			continue;
+		}
+		if (in_dir(inodes[i].name, path) == -1){
+			// Inodo que no pertenece al directorio a borrar.
+			continue;
+		}
+		if (inodes[i].type == TYPE_FILE){
+			fisopfs_unlink(inodes[i].name);
+		} else if (inodes[i].type == TYPE_DIRECTORY) {
+			fisopfs_rmdir(inodes[i].name);
+		} else {
+			continue;
+		}
+	}
+
+	
+	for (int i = 0; i < inodes[inode_idx].blocks; i++){
+		if (inodes[inode_idx].blck_bitmap[i] == FREE){
+			continue;
+		}
+		memset(inodes[inode_idx].blockptr[i], NULL, sizeof(struct datablock));
+		dbitmap[inodes[inode_idx].blck_bitmap[i]] = FREE;
+	}
+	memset(&inodes[inode_idx], NULL, sizeof(struct inode));
+	ibitmap[inode_idx] = FREE;
+	return 0;
+}
+
+
+static int
+fisopfs_truncate(const char *path, off_t offset)
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+	// Del bloque actual en adlente tengo que borrar todo.
+	int current_block = offset/BLOCK_SIZE;
+	int offset_in_block = offset % BLOCK_SIZE;
+	memset(&inodes[inode_idx].blockptr[current_block]->data[offset_in_block], 0, (BLOCK_SIZE - offset_in_block) * sizeof(char));
+	inodes[inode_idx].size = inodes[inode_idx].size - (BLOCK_SIZE - offset_in_block);
+	current_block ++;
+
+	for (int i = current_block; i < BLOCKS_PER_INODE; i++){
+		if (inodes[inode_idx].blck_bitmap[i] == FREE){
+			continue;
+		}
+		memset(inodes[inode_idx].blockptr[i], 0, sizeof(struct datablock));
+		int blck_idx = inodes[inode_idx].blck_bitmap[i];
+		dbitmap[blck_idx] = FREE;
+		inodes[inode_idx].blck_bitmap[i] = FREE;
+		inodes[inode_idx].size = inodes[inode_idx].size - BLOCK_SIZE;
+	}
+	return 0;
+}
+
+
+static int
+fisopfs_utimens(const char *path, const struct timespec time[2])
+{
+	int inode_idx = get_inode(path);
+	if (inode_idx == -1){
+		return -1;
+	}
+	if (time == NULL) {
+		errno = EACCES;
+		return -EACCES;
+	}
+	inodes[inode_idx].atime = time[0].tv_sec;
+	inodes[inode_idx].mtime = time[1].tv_sec;
+	return 0;
+}
+
+
+static int
+fisopfs_flush(const char *path, struct fuse_file_info *fi)
+{
+	filesystem_persistence("fs.fisopfs");
+	return 0;
+}
+
+
 static struct fuse_operations operations = {
 	.init = fisopfs_init,        
 	.destroy = fisopfs_destroy,  
@@ -556,13 +653,13 @@ static struct fuse_operations operations = {
 	.readdir = fisopfs_readdir,
 	.mkdir = fisopfs_mkdir,
 	.unlink = fisopfs_unlink,
-	//.rmdir = fisopfs_rmdir,
-	//.truncate = fisopfs_truncate,
-	//.utimens = fisopfs_utimens,
+	.rmdir = fisopfs_rmdir,
+	.truncate = fisopfs_truncate,
+	.utimens = fisopfs_utimens,
 	.create = fisopfs_create,
 	.read = fisopfs_read,
 	.write = fisopfs_write,
-	//.flush = fisopfs_flush,
+	.flush = fisopfs_flush,
 };
 
 int
