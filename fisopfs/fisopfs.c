@@ -1,8 +1,3 @@
-#include <cstdint>
-#include <fuse/fuse.h>
-#include <time.h>
-
-#include "structures.h"
 
 #define FUSE_USE_VERSION 30
 #define BLOCK_SIZE 4096
@@ -17,7 +12,10 @@
 #define TYPE_DIRECTORY 0
 #define TYPE_FILE 1
 
-#include <fuse.h>
+#include <fuse/fuse.h>
+#include <time.h>
+#include "structures.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -26,9 +24,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-
-
-
 
 
 /*
@@ -42,6 +37,7 @@ int ibitmap[TOTAL_INODES];
 int dbitmap[TOTAL_DATABLOCKS];
 struct inode inodes[TOTAL_INODES];
 struct datablock data_blocks[TOTAL_DATABLOCKS];
+
 
 /*
  *-------------------------------------------------*
@@ -172,10 +168,10 @@ void delete_inode(int i_pos){
 		if (inodes[i_pos].blockptr[i] == NULL){
 			continue;
 		}
-		memset(inodes[i_pos].blockptr[i], NULL, sizeof(struct datablock));
+		memset(inodes[i_pos].blockptr[i], 0, sizeof(struct datablock));
 		dbitmap[inodes[i_pos].blck_bitmap[i]] = FREE;
 	}
-	memset(&inodes[i_pos], NULL, sizeof(struct inode));
+	memset(&inodes[i_pos], 0, sizeof(struct inode));
 }
 
 
@@ -304,7 +300,7 @@ fisopfs_init(struct fuse_conn_info *conn_info){
 
 
 // Hace persistencia sobre el filesystem, lo guarda en un archivo.
-static void *
+static void
 fisopfs_destroy(){
 	filesystem_persistence("fs.fisopfs");
 }
@@ -443,10 +439,10 @@ fisopfs_rmdir(const char *path)
 		if (inodes[inode_idx].blck_bitmap[i] == FREE){
 			continue;
 		}
-		memset(inodes[inode_idx].blockptr[i], NULL, sizeof(struct datablock));
+		memset(inodes[inode_idx].blockptr[i], 0, sizeof(struct datablock));
 		dbitmap[inodes[inode_idx].blck_bitmap[i]] = FREE;
 	}
-	memset(&inodes[inode_idx], NULL, sizeof(struct inode));
+	memset(&inodes[inode_idx], 0, sizeof(struct inode));
 	ibitmap[inode_idx] = FREE;
 	return 0;
 }
@@ -637,9 +633,10 @@ fisopfs_flush(const char *path, struct fuse_file_info *fi)
 }
 
 
+
 static struct fuse_operations operations = {
-	.init = fisopfs_init,        
-	.destroy = fisopfs_destroy,  
+	.init = fisopfs_init,
+	.destroy = fisopfs_destroy,
 	.getattr = fisopfs_getattr,
 	.readdir = fisopfs_readdir,
 	.mkdir = fisopfs_mkdir,
