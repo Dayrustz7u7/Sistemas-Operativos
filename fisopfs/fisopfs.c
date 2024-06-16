@@ -32,11 +32,11 @@
  *****************************
 */
 
-struct superblock superblock;
-int ibitmap[TOTAL_INODES];
-int dbitmap[TOTAL_DATABLOCKS];
-struct inode inodes[TOTAL_INODES];
-struct datablock data_blocks[TOTAL_DATABLOCKS];
+struct superblock superblock;						// Superbloque.
+int ibitmap[TOTAL_INODES];							// Bitmap de inodos.
+int dbitmap[TOTAL_DATABLOCKS];						// Bitmap de data-blocks.
+struct inode inodes[TOTAL_INODES];					// Arreglo de inodos.
+struct datablock data_blocks[TOTAL_DATABLOCKS];		// Arreglo de data-blocks.
 
 
 /*
@@ -182,8 +182,8 @@ int in_dir(const char *path, const char *dir_path){
 	if (!(strlen(path)>strlen(dir_path) && strlen(dir_path)>0)){
 		return -1;
 	}
-
-	// Directory path should have one less dentry.
+	
+	// Directory path should have one less dentry. 
 	// Unless its in root.
 	int dir_dentries = get_total_dentries(dir_path);
 	int path_dentries = get_total_dentries(path);
@@ -192,7 +192,7 @@ int in_dir(const char *path, const char *dir_path){
 			return -1;
 		}
 	}
-
+	
 	if (strncmp(dir_path, path, strlen(dir_path))==0){
 		return 1;
 	}
@@ -256,16 +256,16 @@ deserialize_file(FILE *file_name){
 	result = fread(&superblock, sizeof(struct superblock), 1, file_name);
 	if (result < 0)
 		return -1;
-	result = fread(ibitmap, sizeof(int), TOTAL_INODES, file_name);
+	result = fread(&ibitmap, sizeof(int), TOTAL_INODES, file_name);
 	if (result < 0)
 		return -1;
-	result = fread(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
+	result = fread(&dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
 	if (result < 0)
 		return -1;
-	result = fread(inodes, sizeof(struct inode), TOTAL_INODES, file_name);
+	result = fread(&inodes, sizeof(struct inode), TOTAL_INODES, file_name);
 	if (result < 0)
 		return -1;
-	result = fread(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
+	result = fread(&data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
 	if (result < 0)
 		return -1;
 	superblock.ibitmap = ibitmap;
@@ -456,7 +456,8 @@ fisopfs_truncate(const char *path, off_t offset)
 	if (inode_idx == -1){
 		return -1;
 	}
-	// Del bloque actual en adlente tengo que borrar todo.
+
+	// Del bloque actual en adelante tengo que borrar todo.
 	int current_block = offset/BLOCK_SIZE;
 	int offset_in_block = offset % BLOCK_SIZE;
 	memset(&inodes[inode_idx].blockptr[current_block]->data[offset_in_block], 0, (BLOCK_SIZE - offset_in_block) * sizeof(char));
@@ -533,6 +534,7 @@ fisopfs_read(const char *path,
 	if (offset+size > inodes[inode_idx].blocks*BLOCK_SIZE){
 		size = (inodes[inode_idx].blocks*BLOCK_SIZE - offset);
 	}
+	int bytes_readed = size;
 
 	inodes[inode_idx].atime = time(NULL);
 
@@ -548,7 +550,7 @@ fisopfs_read(const char *path,
 		size = size - read;
 		offset = offset + read;
 	}
-	return 0;
+	return bytes_readed;
 }
 
 
@@ -602,7 +604,7 @@ fisopfs_write(const char *path,
 
 	// Cualquiera de las dos condiciones las considero validas.
 	int buffer_offset = 0;
-	while (offset < inodes[inode_idx].size || size != 0){
+	while (size != 0){
 		int current_block = offset/BLOCK_SIZE;
 		if (inodes[inode_idx].blck_bitmap[current_block] == FREE){
 			// Si el datablock esta lleno, reservo uno nuevo.
