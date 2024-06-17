@@ -16,30 +16,24 @@
 #define TYPE_FILE 1
 
 
+
 /*
  *------------------------------------*
  *			 ESTRUCTURAS			  *
  *------------------------------------*
-
- Se utilizaran 64 Bloques de 4 KB c/u.
- C/Inodo ocupara 256 bytes.
-
- El filesystem estara organizado de la siguiente manera:
-        - Superbloque 		-> 1 Bloque.
-        - Bitmap de inodos 	-> 1 Bloque.
-        - Bitmap de datos 	-> 1 Bloque.
-        - Inodos			-> 5 Bloques.
-        - Datablocks		-> 56 Bloques.
 */
 
-struct datablock {
-	char data[BLOCK_SIZE];
-};
+/*
+ * Con la nueva implementacion dejarian de ser utiles los datablocks
+*/
+
+// struct datablock {
+// 	char data[BLOCK_SIZE];
+// };
 
 struct inode {
 	int inum;                           // Low level file name.
 	int type;                           // Type of file (File | Directory).
-	int blck_bitmap[BLOCKS_PER_INODE];  // Position of blocks in datablock bitmap.
 	char name[NAME_SIZE];  // Name of the file (Including path).
 	mode_t mode;   // Wether this file can be read/ written/ executed.
 	uid_t owner;   // Who owns this file (User id).
@@ -49,13 +43,30 @@ struct inode {
 	time_t mtime;  // Time the file was last modified.
 	time_t atime;  // Time the file was last acceded.
 	nlink_t links_count;  // How many hard links are there on this file.
-	blkcnt_t blocks;  // How many blocks have been allocated to this file.
-	struct datablock *blockptr[DISK_PTRS];  // Set of disk pointers (15 total).
+
+	/*
+	 * En la nueva implementacion se hara que c/inodo tenga su propia data.
+	 * De funcionar luego se creara una variable que defina mejor a BLOCK_SIZE*2
+	*/
+	char data[BLOCK_SIZE*2];				//ahora el inodo no apunta a data, la tiene dentro.
+
+	/*
+	 * atributos que quedan sin utilizar con la nueva implementacion
+	 -  int blck_bitmap[BLOCKS_PER_INODE];  // Position of blocks in datablock bitmap.
+	 -	blkcnt_t blocks;  // How many blocks have been allocated to this file.
+	 -	struct datablock *blockptr[DISK_PTRS];  // Set of disk pointers (15 total).
+	*/
 };
 
+
 struct superblock {
-	int dblocks;   // Amount of datablocks in the filesystem.
 	int inodes;    // Amount of inodes in the filesystem.
 	int *ibitmap;  // Pointer to inode bitmap start.
-	int *dbitmap;  // Pointer to data bitmap start.
+	
+
+	/*
+	 * Con la nueva implementacion no se utilizarian mas los siguientes atributos:
+	 - int dblocks;   // Amount of datablocks in the filesystem.
+	 - int *dbitmap;  // Pointer to data bitmap start.
+	*/
 };
