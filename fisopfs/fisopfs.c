@@ -201,13 +201,10 @@ filesystem_persistence(const char *file_name)
 		printf("No se pudo abrir archivo para la persitencia\n");
 		return;
 	}
-	// Debemos guardar el Superbloque, bitmap de datablocks,
-	// bitmap de inodos, inodos y datablocks en el archivo.
+	// Debemos guardar el Superbloque, bitmap de inodos e inodos en el archivo.
 	fwrite(&superblock, sizeof(struct superblock), 1, file);
-	//fwrite(dbitmap, sizeof(int), TOTAL_DATABLOCKS, file);
 	fwrite(ibitmap, sizeof(int), TOTAL_INODES, file);
 	fwrite(inodes, sizeof(struct inode), TOTAL_INODES, file);
-	//fwrite(data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file);
 	fclose(file);
 }
 
@@ -216,8 +213,6 @@ filesystem_persistence(const char *file_name)
 void
 initialize_filesystem()
 {
-	//superblock.dblocks = TOTAL_DATABLOCKS;
-	//superblock.dbitmap = dbitmap;
 	superblock.inodes = TOTAL_INODES;
 	superblock.ibitmap = ibitmap;
 	filesystem_persistence(SERIALIZATION_FILE);
@@ -232,20 +227,18 @@ deserialize_file(FILE *file_name)
 	        fread(&superblock, sizeof(struct superblock), 1, file_name);
 	if (result_superblock < 0)
 		return -1;
-	// int result_dbitmap =
-	//         fread(&dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
-	// if (result_dbitmap < 0)
-	// 	return -1;
+
 	int result_ibitmap =
 	        fread(&ibitmap, sizeof(int), TOTAL_INODES, file_name);
 	if (result_ibitmap < 0)
 		return -1;
+
 	int result_inodes =
 	        fread(&inodes, sizeof(struct inode), TOTAL_INODES, file_name);
 	if (result_inodes < 0)
 		return -1;
+
 	superblock.ibitmap = ibitmap;
-	//superblock.dbitmap = dbitmap;
 	return 0;
 }
 
@@ -468,16 +461,22 @@ fisopfs_truncate(const char *path, off_t offset)
 	printf("[debug] fisopfs_truncate - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1) {
+		printf("El path no esta bien, inodo no encontrado\n");
 		return -ENOENT;
 	}
 	if (inodes[inode_idx].type == TYPE_DIRECTORY){
+		printf("El inodo es de tipo directorio.\n");
 		return -EISDIR;
 	}
 	if (offset > (BLOCK_SIZE)){
+		printf("No es posible realizar el truncado, el offset es mayor que el tamanio del archivo.\n");
 		return 0;
 	}
+	
 
 	memset(inodes[inode_idx].data + offset, 0, ((BLOCK_SIZE)-offset));
+	inodes[inode_idx].size = (inodes[inode_idx].size < offset) ? inodes[inode_idx].size : offset;
+	printf("truncate realizado con exito\n");
 
 	return 0;
 }
