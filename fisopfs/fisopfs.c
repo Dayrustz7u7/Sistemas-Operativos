@@ -83,7 +83,6 @@ get_free_inode()
 int
 initialize_inode(const char *path, int type, mode_t mode)
 {
-	printf("Se esta incializando un inodo con el path: %s\n", path);
 	int inode_idx = get_free_inode();
 	if ((inode_idx == -1) || (strlen(path) > NAME_SIZE)){
 		return -1;
@@ -93,13 +92,10 @@ initialize_inode(const char *path, int type, mode_t mode)
 	time_t right_now = time(NULL);
 	nlink_t tot_links = 0;
 	if (type == TYPE_DIRECTORY) {
-		printf("El path: %s se inicializo como un directorio\n", path);
 		tot_links = 2;
 	} else {
-		printf("El path: %s se inicializo como un archivo\n", path);
 		tot_links = 1;
 	}
-	printf("Es de tipo %d\n", type);
 
 	current_inode->inum = inode_idx;
 	current_inode->type = type;
@@ -113,8 +109,6 @@ initialize_inode(const char *path, int type, mode_t mode)
 	current_inode->atime = right_now;
 	current_inode->links_count = tot_links;
 	memset(current_inode->data,0,BLOCK_SIZE);
-	printf("Se creo el inodo, en la posicion %d del bitmap\n",inode_idx);
-	printf("El nombre del inodo es %s\n", current_inode->name);
 	return 0;
 }
 
@@ -253,7 +247,6 @@ deserialize_file(FILE *file_name)
 static void *
 fisopfs_init(struct fuse_conn_info *conn_info)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_init\n");
 	FILE *file = fopen(SERIALIZATION_FILE, "r");
 	if (!file) {
@@ -275,7 +268,6 @@ fisopfs_init(struct fuse_conn_info *conn_info)
 static void
 fisopfs_destroy()
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_destroy\n");
 	filesystem_persistence(SERIALIZATION_FILE);
 }
@@ -286,7 +278,6 @@ fisopfs_destroy()
 static int
 fisopfs_getattr(const char *path, struct stat *st)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_getattr - path: %s\n", path);
 
 	if (is_root(path)) {
@@ -333,7 +324,6 @@ fisopfs_readdir(const char *path,
                 off_t offset,
                 struct fuse_file_info *fi)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_readdir - path: %s\n", path);
 	// Los directorios '.' y '..'
 	filler(buffer, ".", NULL, 0);
@@ -383,7 +373,6 @@ fisopfs_readdir(const char *path,
 static int
 fisopfs_mkdir(const char *path, mode_t mode)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_mkdir - path: %s\n", path);
 	return initialize_inode(path, TYPE_DIRECTORY, mode);
 }
@@ -394,7 +383,6 @@ fisopfs_mkdir(const char *path, mode_t mode)
 static int
 fisopfs_unlink(const char *path)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_unlink - path: %s\n", path);
 	int position = get_inode(path);
 	if (position == -1) {
@@ -418,7 +406,6 @@ fisopfs_unlink(const char *path)
 static int
 fisopfs_rmdir(const char *path)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_rmdir - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1) {
@@ -457,7 +444,6 @@ fisopfs_rmdir(const char *path)
 static int
 fisopfs_truncate(const char *path, off_t offset)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_truncate - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1) {
@@ -476,7 +462,6 @@ fisopfs_truncate(const char *path, off_t offset)
 
 	memset(inodes[inode_idx].data + offset, 0, ((BLOCK_SIZE)-offset));
 	inodes[inode_idx].size = (inodes[inode_idx].size < offset) ? inodes[inode_idx].size : offset;
-	printf("truncate realizado con exito\n");
 
 	return 0;
 }
@@ -487,7 +472,6 @@ fisopfs_truncate(const char *path, off_t offset)
 static int
 fisopfs_utimens(const char *path, const struct timespec time[2])
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_utimens - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1) {
@@ -507,7 +491,6 @@ fisopfs_utimens(const char *path, const struct timespec time[2])
 static int
 fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_create - path: %s\n", path);
 	return initialize_inode(path, TYPE_FILE, mode);
 }
@@ -528,7 +511,6 @@ fisopfs_read(const char *path,
              off_t offset,
              struct fuse_file_info *fi)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_read - path: %s\n", path);
 	if (offset < 0 || size < 0) {
 		return -1;
@@ -574,7 +556,6 @@ fisopfs_write(const char *path,
               off_t offset,
               struct fuse_file_info *fi)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_write - path: %s\n", path);
 	int max_size = BLOCK_SIZE;
 	int size_after_writing = size + offset;
@@ -587,7 +568,6 @@ fisopfs_write(const char *path,
 
 	if (inode_idx == -1) {
 		// Si el archivo no existe, lo creamos.
-		printf("Se crea un archivo, para escribir, dado que no existe\n");
 		int initialization = initialize_inode(path, TYPE_FILE, 0644);
 		if (initialization == -1) {
 			return -1;
@@ -611,8 +591,6 @@ fisopfs_write(const char *path,
 	char message[5];
 	memcpy(&message, buffer, size);
 	memcpy(inodes[inode_idx].data + offset, buffer, size);
-	printf("Acabamos de escribir %zu bytes dentro del bloque\n",size);
-	printf("Se escribio el mensaje %s dentro de %s\n", message, inodes[inode_idx].name);
 	return size;
 }
 
@@ -620,7 +598,6 @@ fisopfs_write(const char *path,
 static int
 fisopfs_flush(const char *path, struct fuse_file_info *fi)
 {
-	printf("\n\n\n");
 	printf("[debug] fisopfs_flush - path: %s\n", path);
 	filesystem_persistence(SERIALIZATION_FILE);
 	return 0;
