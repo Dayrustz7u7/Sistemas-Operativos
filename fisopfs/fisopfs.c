@@ -24,9 +24,9 @@
  *****************************
  */
 
-struct superblock superblock;                    // Superbloque.
-int ibitmap[TOTAL_INODES];                       // Bitmap de inodos.
-struct inode inodes[TOTAL_INODES];               // Arreglo de inodos.
+struct superblock superblock;       // Superbloque.
+int ibitmap[TOTAL_INODES];          // Bitmap de inodos.
+struct inode inodes[TOTAL_INODES];  // Arreglo de inodos.
 
 
 /*
@@ -84,7 +84,7 @@ int
 initialize_inode(const char *path, int type, mode_t mode)
 {
 	int inode_idx = get_free_inode();
-	if ((inode_idx == -1) || (strlen(path) > NAME_SIZE)){
+	if ((inode_idx == -1) || (strlen(path) > NAME_SIZE)) {
 		return -1;
 	}
 	ibitmap[inode_idx] = OCCUPIED;
@@ -108,7 +108,7 @@ initialize_inode(const char *path, int type, mode_t mode)
 	current_inode->mtime = right_now;
 	current_inode->atime = right_now;
 	current_inode->links_count = tot_links;
-	memset(current_inode->data,0,BLOCK_SIZE);
+	memset(current_inode->data, 0, BLOCK_SIZE);
 	return 0;
 }
 
@@ -139,7 +139,7 @@ get_name_offset(const char *path)
 	for (int i = 0; i < length; i++) {
 		if (path[i] == '/') {
 			// Posicion de la primera letra del nombre.
-			position = i + 1;  
+			position = i + 1;
 		}
 	}
 	return position;
@@ -263,7 +263,6 @@ fisopfs_init(struct fuse_conn_info *conn_info)
 }
 
 
-
 // Hace persistencia sobre el filesystem, lo guarda en un archivo.
 static void
 fisopfs_destroy()
@@ -271,7 +270,6 @@ fisopfs_destroy()
 	printf("[debug] fisopfs_destroy\n");
 	filesystem_persistence(SERIALIZATION_FILE);
 }
-
 
 
 // Obtiene los atributos relacionados a un inodo (status)
@@ -286,7 +284,7 @@ fisopfs_getattr(const char *path, struct stat *st)
 		st->st_nlink = 2;
 		return 0;
 	}
-	
+
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1) {
 		printf("El path no esta bien, inodo no encontrado\n");
@@ -313,7 +311,6 @@ fisopfs_getattr(const char *path, struct stat *st)
 
 	return 0;
 }
-
 
 
 // Muestra todos el contenido de un directorio (ls)
@@ -368,7 +365,6 @@ fisopfs_readdir(const char *path,
 }
 
 
-
 // Creamos un directorio.
 static int
 fisopfs_mkdir(const char *path, mode_t mode)
@@ -376,7 +372,6 @@ fisopfs_mkdir(const char *path, mode_t mode)
 	printf("[debug] fisopfs_mkdir - path: %s\n", path);
 	return initialize_inode(path, TYPE_DIRECTORY, mode);
 }
-
 
 
 // Hace unlink sobre un inodo.
@@ -399,7 +394,6 @@ fisopfs_unlink(const char *path)
 
 	return 0;
 }
-
 
 
 // Remueve un directorio y todo su contenido.
@@ -439,7 +433,6 @@ fisopfs_rmdir(const char *path)
 }
 
 
-
 // Truncado de archivos, para reducir su tamanio.
 static int
 fisopfs_truncate(const char *path, off_t offset)
@@ -450,22 +443,24 @@ fisopfs_truncate(const char *path, off_t offset)
 		printf("El path no esta bien, inodo no encontrado\n");
 		return -ENOENT;
 	}
-	if (inodes[inode_idx].type == TYPE_DIRECTORY){
+	if (inodes[inode_idx].type == TYPE_DIRECTORY) {
 		printf("El inodo es de tipo directorio.\n");
 		return -EISDIR;
 	}
-	if (offset > (BLOCK_SIZE)){
-		printf("No es posible realizar el truncado, el offset es mayor que el tamanio del archivo.\n");
+	if (offset > (BLOCK_SIZE)) {
+		printf("No es posible realizar el truncado, el offset es mayor "
+		       "que el tamanio del archivo.\n");
 		return 0;
 	}
-	
 
-	memset(inodes[inode_idx].data + offset, 0, ((BLOCK_SIZE)-offset));
-	inodes[inode_idx].size = (inodes[inode_idx].size < offset) ? inodes[inode_idx].size : offset;
+
+	memset(inodes[inode_idx].data + offset, 0, ((BLOCK_SIZE) -offset));
+	inodes[inode_idx].size = (inodes[inode_idx].size < offset)
+	                                 ? inodes[inode_idx].size
+	                                 : offset;
 
 	return 0;
 }
-
 
 
 // Modifica fecha de ultimo acceso y ultima modificacion del archivo.
@@ -496,7 +491,6 @@ fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 }
 
 
-
 /*
  * Lee de un archivo
  * path 	-> Ruta del archivo a leer
@@ -525,12 +519,12 @@ fisopfs_read(const char *path,
 		printf("El inodo es de tipo directorio\n");
 		return -EISDIR;
 	}
-	if (offset > inodes[inode_idx].size){
+	if (offset > inodes[inode_idx].size) {
 		// Verificamos que el offset no sea mayor que el tamanio del archivo.
 		printf("El offset es mayor que el tamanio del archivo\n");
 		return -ENOMEM;
 	}
-	if ( offset + size > inodes[inode_idx].size){
+	if (offset + size > inodes[inode_idx].size) {
 		// Verificamos que el offset mas los bytes a leer no sean mayores que el tamanio del archivo.
 		int unreadable = (offset + size) - inodes[inode_idx].size;
 		size = size - unreadable;
@@ -539,7 +533,6 @@ fisopfs_read(const char *path,
 	memcpy(buffer, inodes[inode_idx].data + offset, size);
 	return size;
 }
-
 
 
 /*
@@ -560,10 +553,10 @@ fisopfs_write(const char *path,
 	int max_size = BLOCK_SIZE;
 	int size_after_writing = size + offset;
 
-	if (offset > max_size){
+	if (offset > max_size) {
 		return -ENOMEM;
 	}
-	
+
 	int inode_idx = get_inode(path);
 
 	if (inode_idx == -1) {

@@ -21,11 +21,11 @@
  *------------------------------------*
  *			 ESTRUCTURAS			  *
  *------------------------------------*
-*/
+ */
 
 struct inode {
-	int inum;                           // Low level file name.
-	int type;                           // Type of file (File | Directory).
+	int inum;              // Low level file name.
+	int type;              // Type of file (File | Directory).
 	char name[NAME_SIZE];  // Name of the file (Including path).
 	mode_t mode;   // Wether this file can be read/ written/ executed.
 	uid_t owner;   // Who owns this file (User id).
@@ -34,8 +34,8 @@ struct inode {
 	time_t ctime;  // Time the file was created.
 	time_t mtime;  // Time the file was last modified.
 	time_t atime;  // Time the file was last acceded.
-	nlink_t links_count;  // How many hard links are there on this file.
-	char data[BLOCK_SIZE];	// Inode data.
+	nlink_t links_count;    // How many hard links are there on this file.
+	char data[BLOCK_SIZE];  // Inode data.
 };
 
 

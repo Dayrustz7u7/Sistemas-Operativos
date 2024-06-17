@@ -1,5 +1,3 @@
-#!bin/bash
-
 # Se crean 2 archivos, uno mediante touch y otro mediante write, ademas 
 # se los escribe a ambos, se lee su contendio, se hace un touch y un stat.
 # Por ultimo se los elimina.

@@ -1,5 +1,3 @@
-#!bin/bash
-
 # Se crean tres directorios, uno dentro de otro, y luego se 
 # elimina el directorio padre.
 

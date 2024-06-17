@@ -1,5 +1,3 @@
-#!bin/bash
-
 # Se crean 2 archivos, se escriben dentro, luego un directorio con un archivo
 # al cual tambien se le escribe, salimos de prueba y volvemos a entrar
 # para verificar que haya persistido de forma correcta.
