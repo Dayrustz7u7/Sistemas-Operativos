@@ -48,7 +48,6 @@ struct inode {
 	time_t ctime;							// Time the file was created.
 	time_t mtime;							// Time the file was last modified.
 	time_t atime;							// Time the file was last acceded.
-	time_t dtime;							// Time the inode was deleted.
 	nlink_t links_count;					// How many hard links are there on this file.
 	blkcnt_t blocks;						// How many blocks have been allocated to this file.
 	struct datablock *blockptr[DISK_PTRS];	// Set of disk pointers (15 total).

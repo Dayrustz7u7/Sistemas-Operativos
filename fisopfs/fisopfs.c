@@ -1,4 +1,6 @@
 
+#include <errno.h>
+#include <fcntl.h>
 #define FUSE_USE_VERSION 30
 #define BLOCK_SIZE 4096
 #define DISK_PTRS 15
@@ -11,6 +13,8 @@
 #define DIRECTORY 1
 #define TYPE_DIRECTORY 0
 #define TYPE_FILE 1
+#define SERIALIZATION_FILE "fs.fisopfs"
+#define ROOT "/"
 
 #include <fuse/fuse.h>
 #include <time.h>
@@ -50,13 +54,26 @@ struct datablock data_blocks[TOTAL_DATABLOCKS];		// Arreglo de data-blocks.
 // De no haber ningun inodo que coincida devolvemos -1.
 int get_inode(const char *path){
 	for (int i = 0; i < TOTAL_INODES; i++){
-		if (ibitmap[i] == OCCUPIED && strcmp(inodes[i].name, path)==0){
+		if (ibitmap[i] == FREE){
+			continue;
+		}
+		printf("El inodo de la posicion %d no esta ocupado y su nombre es %s\n",i,inodes[i].name);
+		if (strcmp(inodes[i].name, path)==0){
+			printf("Se encontro el inodo del path %s\n", path);
 			return i;
 		}
 	}
 	return -1;
 }
 
+
+// Devuelve 1 si el path pasado corresponde al root, 0 si no.
+int is_root(const char *path){
+	if (strcmp(path, ROOT)==0){
+		return 1;
+	}
+	return 0;
+}
 
 // Obtiene la posicion del primer bloque libre.
 // Omitimos la posicion 0, pues si una posicion en el blck_bitmap 
@@ -98,15 +115,17 @@ int get_free_blockptr(int idx_inode){
 
 
 // Inicializa un inodo. 
-// En caso de exito devuelve la posicion del mismo, caso contrario -1.
+// En caso de exito devuelvo 0, caso contrario -1.
 int initialize_inode(const char *path, int type, mode_t mode){
+	printf("Se esta incializando un inodo con el path: %s\n", path);
 	int position = get_free_inode();
 	int first_block = get_free_block();
-	if ( (position == -1) || (first_block == -1) || (strlen(path)> NAME_SIZE) ){
+	if ( (position == -1) || (first_block == -1) || (strlen(path) > NAME_SIZE) ){
 		return -1;
 	}
-	ibitmap[position] = OCCUPIED;
-	dbitmap[first_block] = OCCUPIED;
+	superblock.ibitmap[position] = OCCUPIED;
+	superblock.dbitmap[first_block] = OCCUPIED;
+	printf("Se reservo la posicion del ibitmap: %d ", position);
 
 	struct inode current_inode = inodes[position];
 	time_t right_now = time(NULL);
@@ -131,6 +150,8 @@ int initialize_inode(const char *path, int type, mode_t mode){
 	current_inode.links_count = tot_links;
 	current_inode.blocks = 1;
 	current_inode.blockptr[0] = &data_blocks[first_block];
+	printf("Se creo el inodo\n");
+	printf("El nombre del inodo es %s\n", current_inode.name);
 	return position;
 }
 
@@ -138,7 +159,8 @@ int initialize_inode(const char *path, int type, mode_t mode){
 // Obtiene todas las dentries de un path dado.
 int get_total_dentries(const char *path){
 	int tot_dentries = 0;
-	for (int i = 0; i < strlen(path); i++){
+	int length = strlen(path);
+	for (int i = 0; i < length; i++){
 		if (path[i] == '/'){
 			tot_dentries++;
 		}
@@ -152,7 +174,8 @@ int get_total_dentries(const char *path){
 // Devuelve -1 si es que no tiene.
 int get_name_offset(const char *path){
 	int position = -1;
-	for (int i = 0; i < strlen(path); i++){
+	int length = strlen(path);
+	for (int i = 0; i < length; i++){
 		if (path[i] == '/'){
 			position = i+1; 	// Posicion de la primera letra del nombre.
 		}
@@ -165,7 +188,7 @@ int get_name_offset(const char *path){
 void delete_inode(int i_pos){
 	ibitmap[i_pos] = FREE;
 	for (int i = 0; i < BLOCKS_PER_INODE; i++){
-		if (inodes[i_pos].blockptr[i] == NULL){
+		if (inodes[i_pos].blck_bitmap[i] == FREE){
 			continue;
 		}
 		memset(inodes[i_pos].blockptr[i], 0, sizeof(struct datablock));
@@ -183,21 +206,21 @@ int in_dir(const char *path, const char *dir_path){
 		return -1;
 	}
 	
-	// Directory path should have one less dentry. 
-	// Unless its in root.
-	int dir_dentries = get_total_dentries(dir_path);
-	int path_dentries = get_total_dentries(path);
-	if ((dir_dentries+1) != path_dentries){ 				// Only case condition isn't valid, yet path belongs to dir_path is root.
-		if ((dir_dentries != 1) && (path_dentries != 1)){ 	// If both have only one "/", then its root.
-			return -1;
-		}
-	}
-	
 	if (strncmp(dir_path, path, strlen(dir_path))==0){
 		return 1;
 	}
 
 	return -1;
+}
+
+
+// Indica si un path pertenece al root.
+// Devuelve 1 en caso de que pertenezca, 0 si no.
+int in_root(const char *path){
+	if (get_total_dentries(path)==1){
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -223,6 +246,7 @@ filesystem_persistence(const char *file_name)
 	FILE *file;
 	file = fopen(file_name, "wb");
 	if (!file){
+		printf("No se pudo abrir archivo para la persitencia\n");
 		return;
 	}
 	// Debemos guardar el Superbloque, bitmap de datablocks,
@@ -244,7 +268,7 @@ initialize_filesystem()
 	superblock.dbitmap 	= 	dbitmap;
 	superblock.inodes 	= 	TOTAL_INODES;
 	superblock.ibitmap 	= 	ibitmap;
-	filesystem_persistence("fs.fisopfs");
+	filesystem_persistence(SERIALIZATION_FILE);
 }
 
 
@@ -252,21 +276,21 @@ initialize_filesystem()
 static int
 deserialize_file(FILE *file_name){
 
-	int result;
-	result = fread(&superblock, sizeof(struct superblock), 1, file_name);
-	if (result < 0)
+	
+	int result_superblock = fread(&superblock, sizeof(struct superblock), 1, file_name);
+	if (result_superblock < 0)
 		return -1;
-	result = fread(&ibitmap, sizeof(int), TOTAL_INODES, file_name);
-	if (result < 0)
+	int result_dbitmap = fread(&dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
+	if (result_dbitmap < 0)
 		return -1;
-	result = fread(&dbitmap, sizeof(int), TOTAL_DATABLOCKS, file_name);
-	if (result < 0)
+	int result_ibitmap = fread(&ibitmap, sizeof(int), TOTAL_INODES, file_name);
+	if (result_ibitmap < 0)
 		return -1;
-	result = fread(&inodes, sizeof(struct inode), TOTAL_INODES, file_name);
-	if (result < 0)
+	int result_inodes = fread(&inodes, sizeof(struct inode), TOTAL_INODES, file_name);
+	if (result_inodes < 0)
 		return -1;
-	result = fread(&data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
-	if (result < 0)
+	int result_db = fread(&data_blocks, sizeof(struct datablock), TOTAL_DATABLOCKS, file_name);
+	if (result_db < 0)
 		return -1;
 	superblock.ibitmap = ibitmap;
 	superblock.dbitmap = dbitmap;
@@ -284,7 +308,8 @@ deserialize_file(FILE *file_name){
 // Inicializa el filesystem.
 static void *
 fisopfs_init(struct fuse_conn_info *conn_info){
-	FILE *file = fopen("fs.fisopfs", "rb");
+	printf("[debug] fisopfs_init\n");
+	FILE *file = fopen(SERIALIZATION_FILE, "rb");
 	if (!file){
 		initialize_filesystem();
 
@@ -302,7 +327,8 @@ fisopfs_init(struct fuse_conn_info *conn_info){
 // Hace persistencia sobre el filesystem, lo guarda en un archivo.
 static void
 fisopfs_destroy(){
-	filesystem_persistence("fs.fisopfs");
+	printf("[debug] fisopfs_destroy\n");
+	filesystem_persistence(SERIALIZATION_FILE);
 }
 
 
@@ -310,9 +336,21 @@ fisopfs_destroy(){
 static int
 fisopfs_getattr(const char *path, struct stat *st)
 {
+	printf("[debug] fisopfs_getattr - path: %s\n", path);
+	
+	if (is_root(path)){
+		st->st_uid = 1717;
+		st->st_mode = __S_IFDIR | 0755;
+		st->st_nlink = 2;
+		return 0;
+	}
+	for (int i=0;i<10;i++){
+		printf("ibitmap, posicion %d tiene un %d\n",i,ibitmap[i]);
+	}
+	printf("\n");
 	int inode_idx = get_inode(path);
-
 	if (inode_idx == -1) {
+		printf("El path no esta bien, inodo no encontrado\n");
 		return -ENOENT;
 	}
 	struct inode inode = inodes[inode_idx];
@@ -327,12 +365,11 @@ fisopfs_getattr(const char *path, struct stat *st)
 	st->st_gid = inode.group;
 	st->st_blksize = BLOCK_SIZE;
 	st->st_blocks = inode.blocks;
+	st->st_nlink = inode.links_count;
 
 	if (inode.type == TYPE_FILE) {
-		st->st_nlink = 1;
 		st->st_mode = __S_IFREG | 0644;
 	} else {
-		st->st_nlink = 2;
 		st->st_mode = __S_IFDIR | 0755;
 	}
 
@@ -348,21 +385,36 @@ fisopfs_readdir(const char *path,
                 off_t offset,
                 struct fuse_file_info *fi)
 {
+	printf("[debug] fisopfs_readdir - path: %s\n", path);
 	// Los directorios '.' y '..'
 	filler(buffer, ".", NULL, 0);
 	filler(buffer, "..", NULL, 0);
 
+	if (is_root(path)){
+		for (int i=0; i<TOTAL_INODES; i++){
+			if (ibitmap[i]==FREE){
+				continue;
+			}
+			if (in_root(inodes[i].name)){
+				filler(buffer, inodes[i].name+1, NULL, 0);
+			}
+		}
+		return 0;
+	}
+
 	int position = get_inode(path);
 	if (position == -1){
-		return -1;
+		printf("El path no esta bien, inodo no encontrado\n");
+		return -ENOENT;
 	}
 	struct inode directory = inodes[position];
 	if (directory.type != TYPE_DIRECTORY){
-		return -1;
+		printf("El path pasado era de tipo directorio\n");
+		return -EISDIR;
 	}
 
 	directory.atime = time (NULL);
-
+	
 	for (int i = 0; i < TOTAL_INODES; i++){
 		if (ibitmap[i]==FREE){
 			continue;
@@ -379,6 +431,7 @@ fisopfs_readdir(const char *path,
 
 // Creamos un directorio.
 static int fisopfs_mkdir(const char *path, mode_t mode){
+	printf("[debug] fisopfs_mkdir - path: %s\n", path);
 	return initialize_inode(path, TYPE_DIRECTORY, mode);
 }
 
@@ -386,12 +439,13 @@ static int fisopfs_mkdir(const char *path, mode_t mode){
 // Hace unlink sobre un inodo.
 static int
 fisopfs_unlink(const char *path){
+	printf("[debug] fisopfs_unlink - path: %s\n", path);
 	int position = get_inode(path);
 	if (position==-1){
-		return -1;
+		return -ENOENT;
 	}
 	if (inodes[position].type==TYPE_DIRECTORY){
-		return -1;
+		return -EISDIR;
 	}
 	inodes[position].links_count--;
 
@@ -407,13 +461,14 @@ fisopfs_unlink(const char *path){
 static int
 fisopfs_rmdir(const char *path)
 {
+	printf("[debug] fisopfs_rmdir - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1){
-		return -1;
+		return -ENOENT;
 	}
 
 	if (inodes[inode_idx].type == TYPE_FILE){
-		return -1;
+		return -ENOTDIR;
 	}
 
 	for (int i = 0; i < TOTAL_INODES; i++){
@@ -427,10 +482,8 @@ fisopfs_rmdir(const char *path)
 		}
 		if (inodes[i].type == TYPE_FILE){
 			fisopfs_unlink(inodes[i].name);
-		} else if (inodes[i].type == TYPE_DIRECTORY) {
-			fisopfs_rmdir(inodes[i].name);
 		} else {
-			continue;
+			fisopfs_rmdir(inodes[i].name);
 		}
 	}
 
@@ -452,9 +505,10 @@ fisopfs_rmdir(const char *path)
 static int
 fisopfs_truncate(const char *path, off_t offset)
 {
+	printf("[debug] fisopfs_truncate - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1){
-		return -1;
+		return -ENOENT;
 	}
 
 	// Del bloque actual en adelante tengo que borrar todo.
@@ -482,6 +536,7 @@ fisopfs_truncate(const char *path, off_t offset)
 static int
 fisopfs_utimens(const char *path, const struct timespec time[2])
 {
+	printf("[debug] fisopfs_utimens - path: %s\n", path);
 	int inode_idx = get_inode(path);
 	if (inode_idx == -1){
 		return -1;
@@ -499,6 +554,7 @@ fisopfs_utimens(const char *path, const struct timespec time[2])
 // Crea un archivo
 static int
 fisopfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
+	printf("[debug] fisopfs_create - path: %s\n", path);
 	return initialize_inode(path, TYPE_FILE, mode);
 }
 
@@ -517,6 +573,7 @@ fisopfs_read(const char *path,
              off_t offset,
              struct fuse_file_info *fi)
 {
+	printf("[debug] fisopfs_read - path: %s\n", path);
 	if (offset < 0 || size < 0){
 		return -1;
 	}
@@ -568,6 +625,7 @@ fisopfs_write(const char *path,
               off_t offset,
               struct fuse_file_info *fi)
 {	
+	printf("[debug] fisopfs_write - path: %s\n", path);
 	int max_size = BLOCKS_PER_INODE*BLOCK_SIZE;
 	int size_after_writing = size + offset;
 	if (size_after_writing > max_size){
@@ -630,7 +688,8 @@ fisopfs_write(const char *path,
 static int
 fisopfs_flush(const char *path, struct fuse_file_info *fi)
 {
-	filesystem_persistence("fs.fisopfs");
+	printf("[debug] fisopfs_flush - path: %s\n", path);
+	filesystem_persistence(SERIALIZATION_FILE);
 	return 0;
 }
 
