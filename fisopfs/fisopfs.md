@@ -1,7 +1,5 @@
 # fisop-fs
 
-Lugar para respuestas en prosa y documentación del TP.
-
 ## Documentación de diseño
 
 # Estructuras
@@ -42,6 +40,28 @@ Para encontrar un archivo mediante un path contamos con la siguiente funcion aux
 ```c
 int get_inode(const char *path)
 ```
+
+El algoritmo es muy simple, primero recorre el bitmap de inodos, para cada posicion se fija si esta ocupado o no. 
+Si esta ocupado, busca el inodo dentro del arreglo de inodos y compara su nombre con el path pasado por parametro, de coincidir, devuelve la posicion del mismo.
+
+
+## Estructuras auxiliares.
+
+A parte de todas las estructuras mencionadas al inicio, no se utilizo ningun otro tipo de estructura.
+
+
+## Serializacion en disco.
+
+Para la persistencia se escriben los bytes del estado actual de las estructuras dentro de un archivo. 
+Cuando se vuelve a inicializar el filesystem se lee del archivo y se setean todas las estructuras en base a lo que se leyo del archivo, de no existir el archivo, lo crea para iniciar la serializacion.
+
+
+## Informacion relevante.
+
+El tamaño de un archivo es fijo (8 Kb), a diferencia de un sistema que utiliza punteros a bloques que puede agrandar o disminuir su capacidad.
+
+
+## Test.
 
 ![test1](docs/test_operaciones.jpeg)
 
