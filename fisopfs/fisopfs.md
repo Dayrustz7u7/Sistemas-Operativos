@@ -43,4 +43,10 @@ Para encontrar un archivo mediante un path contamos con la siguiente funcion aux
 int get_inode(const char *path)
 ```
 
+![test1](docs/test_operaciones.jpeg)
 
+![test2](docs/files_operationsf1.jpeg)
+
+![test1](docs/test_operacionesf2.jpeg)
+
+![test1](docs/test_persistencia.jpeg)
